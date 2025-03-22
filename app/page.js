@@ -34,8 +34,8 @@ export default function Home() {
       </div>
 
       {/* Features Section */}
-      <div className="py-20 bg-white">
-        <div className="container mx-auto px-4">
+      <div className="py-10 sm:py-20 bg-white">
+        <div className="px-0 sm:px-4">
           <h2 className="text-3xl font-bold text-center mb-12 text-gray-800">
             خدمات ما
           </h2>
@@ -66,8 +66,8 @@ export default function Home() {
       </div>
 
       {/* About Section */}
-      <div className="py-20 bg-gray-50">
-        <div className="container mx-auto px-4">
+      <div className="py-10 sm:py-20 bg-gray-50">
+        <div className="px-0 sm:px-4">
           <div className="max-w-3xl mx-auto text-center">
             <h2 className="text-3xl font-bold mb-6 text-gray-800">
               درباره آریا فولاد قرن

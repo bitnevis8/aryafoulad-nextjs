@@ -67,29 +67,47 @@ const MissionOrderEdit = ({ missionOrderId }) => {
   const [unitLocations, setUnitLocations] = useState([]);
   const [selectedUnit, setSelectedUnit] = useState(null);
 
+  const handleDateChange = (date) => {
+    if (date) {
+      try {
+        // اگر تاریخ به صورت Date object باشد
+        if (date instanceof Date) {
+          const persianDate = {
+            year: date.getFullYear(),
+            month: date.getMonth() + 1,
+            day: date.getDate()
+          };
+          setValue('day', persianDate);
+        } else {
+          // اگر تاریخ به صورت object باشد
+          setValue('day', date);
+        }
+      } catch (error) {
+        console.error('Error handling date:', error);
+        setValue('day', null);
+      }
+    }
+  };
+
   // Fetch mission order details and unit locations
   useEffect(() => {
     const fetchData = async () => {
       try {
         setInitialLoading(true);
-        
-        // Log the API endpoints being called
-        console.log('Fetching mission order from:', API_ENDPOINTS.missionOrders.getById(missionOrderId));
+        setError(null);
         
         // Fetch mission order
         const orderResponse = await fetch(API_ENDPOINTS.missionOrders.getById(missionOrderId));
         if (!orderResponse.ok) {
-          throw new Error(`Failed to fetch mission order: ${orderResponse.status}`);
+          throw new Error(`خطا در دریافت اطلاعات ماموریت: ${orderResponse.status}`);
         }
         const orderData = await orderResponse.json();
         const missionOrder = orderData.data;
         
-        console.log('Received mission order:', missionOrder);
-        
-        // Fetch unit locations first
+        // Fetch unit locations
         const locationsResponse = await fetch(API_ENDPOINTS.unitLocations.getAll);
         if (!locationsResponse.ok) {
-          throw new Error(`Failed to fetch unit locations: ${locationsResponse.status}`);
+          throw new Error(`خطا در دریافت اطلاعات واحدها: ${locationsResponse.status}`);
         }
         const locationsData = await locationsResponse.json();
         const units = locationsData.data || [];
@@ -97,69 +115,52 @@ const MissionOrderEdit = ({ missionOrderId }) => {
         
         // Find the selected unit
         const unit = units.find(u => u.name === missionOrder.fromUnit);
-        console.log('Found unit:', unit);
         if (!unit) {
-          console.warn('No matching unit found for:', missionOrder.fromUnit);
           throw new Error('واحد مبدا یافت نشد');
         }
-        
-        // Set selected unit first
         setSelectedUnit(unit);
         
         // Process destinations
         let processedDestinations = [];
         if (missionOrder.destinations) {
           try {
-            // If destinations is a string, try to parse it
-            if (typeof missionOrder.destinations === 'string') {
-              processedDestinations = JSON.parse(missionOrder.destinations);
-            } else {
-              processedDestinations = missionOrder.destinations;
-            }
+            processedDestinations = typeof missionOrder.destinations === 'string' 
+              ? JSON.parse(missionOrder.destinations) 
+              : missionOrder.destinations;
             
-            // Ensure destinations is an array
             if (!Array.isArray(processedDestinations)) {
               processedDestinations = [processedDestinations];
             }
             
-            // Ensure each destination has the correct format
             processedDestinations = processedDestinations.map(dest => ({
               lat: parseFloat(dest.lat),
               lng: parseFloat(dest.lng),
               title: dest.title || ''
             }));
-            
-            console.log('Processed destinations:', processedDestinations);
           } catch (e) {
             console.error('Error processing destinations:', e);
             processedDestinations = [];
           }
         }
         
-        // Set destinations in state
         setDestinations(processedDestinations);
         
         // Reset form with mission order data
         reset({
           ...missionOrder,
           destinations: processedDestinations,
-          fromUnit: unit.name
+          fromUnit: unit.name,
+          day: missionOrder.day ? new Date(missionOrder.day) : null
         });
         
         // Calculate route if we have both unit and destinations
         if (processedDestinations.length > 0) {
-          console.log('Calculating initial route with unit:', unit);
-          console.log('And destinations:', processedDestinations);
-          
-          // Wait a bit to ensure state is updated
-          await new Promise(resolve => setTimeout(resolve, 500));
           await calculateCompleteRoute(processedDestinations, unit);
         }
         
-        setError(null);
       } catch (err) {
         console.error("Error loading data:", err);
-        setError(err.message);
+        setError(err.message || 'خطا در بارگیری اطلاعات');
       } finally {
         setInitialLoading(false);
       }
@@ -352,20 +353,6 @@ const MissionOrderEdit = ({ missionOrderId }) => {
     }
   };
 
-  const handleDateChange = (date) => {
-    if (date) {
-      try {
-        const gregorianDate = jalaali.toGregorian(date.year, date.month, date.day);
-        const formattedDate = `${gregorianDate.gy}-${String(gregorianDate.gm).padStart(2, '0')}-${String(gregorianDate.gd).padStart(2, '0')}`;
-        setValue('day', formattedDate);
-      } catch (error) {
-        console.error('Error converting date:', error);
-        const formattedDate = `${date.year}-${String(date.month).padStart(2, '0')}-${String(date.day).padStart(2, '0')}`;
-        setValue('day', formattedDate);
-      }
-    }
-  };
-
   if (initialLoading) {
     return (
       <div className="flex justify-center items-center min-h-[400px]">
@@ -395,6 +382,13 @@ const MissionOrderEdit = ({ missionOrderId }) => {
       <div className="bg-white rounded-lg shadow-lg p-2 sm:p-6">
         <h1 className="text-xl sm:text-2xl font-bold text-gray-800 mb-4 sm:mb-6 text-center">ویرایش حکم ماموریت</h1>
         
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">
+            <p className="font-medium">خطا</p>
+            <p>{error}</p>
+          </div>
+        )}
+
         <div className="w-full h-[300px] sm:h-[400px] border rounded-lg mb-4 sm:mb-6 relative">
           <MapContainer
             center={selectedUnit ? [selectedUnit.latitude, selectedUnit.longitude] : [31.348808655624506, 48.72288275224326]}
@@ -505,7 +499,7 @@ const MissionOrderEdit = ({ missionOrderId }) => {
                 <DatePicker
                   calendar={persian}
                   locale={persian_fa}
-                  value={watch('day') ? new Date(watch('day')) : null}
+                  value={watch('day')}
                   onChange={handleDateChange}
                   calendarPosition="bottom-right"
                   format="YYYY/MM/DD"
@@ -534,6 +528,12 @@ const MissionOrderEdit = ({ missionOrderId }) => {
                   weekDays={['ش', 'ی', 'د', 'س', 'چ', 'پ', 'ج']}
                   placeholder="تاریخ را انتخاب کنید"
                   style={{ width: '100%' }}
+                  renderValue={(value, format) => {
+                    if (!value) return '';
+                    const date = new Date(value);
+                    const persianDate = jalaali.toJalaali(date.getFullYear(), date.getMonth() + 1, date.getDate());
+                    return `${persianDate.jy}/${String(persianDate.jm).padStart(2, '0')}/${String(persianDate.jd).padStart(2, '0')}`;
+                  }}
                 />
               </div>
             </div>

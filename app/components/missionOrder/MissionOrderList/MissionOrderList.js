@@ -116,7 +116,8 @@ const MissionOrderList = () => {
         </div>
       ) : (
         <div className="bg-white shadow-md rounded-lg overflow-hidden">
-          <div className="overflow-x-auto">
+          {/* Desktop Table View */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full">
               <thead className="bg-gray-50">
                 <tr>
@@ -193,6 +194,67 @@ const MissionOrderList = () => {
                 ))}
               </tbody>
             </table>
+          </div>
+
+          {/* Mobile Card View */}
+          <div className="md:hidden">
+            <div className="divide-y divide-gray-200">
+              {missionOrders.map((order) => (
+                <div key={order.id} className="p-4 hover:bg-gray-50">
+                  <div className="flex justify-between items-start mb-4">
+                    <div>
+                      <h3 className="text-lg font-medium text-gray-900">
+                        {order.missionSubject || 'بدون عنوان'}
+                      </h3>
+                      <p className="text-sm text-gray-500">
+                        {`${order.firstName || ''} ${order.lastName || ''}`}
+                        {order.personnelNumber && ` - کد پرسنلی: ${order.personnelNumber}`}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Link href={`/dashboard/missionOrder/${order.id}`}>
+                        <Button variant="secondary" size="small">
+                          مشاهده
+                        </Button>
+                      </Link>
+                      <Link href={`/dashboard/missionOrder/edit/${order.id}`}>
+                        <Button variant="secondary" size="small">
+                          ویرایش
+                        </Button>
+                      </Link>
+                      <Button 
+                        variant="danger" 
+                        size="small" 
+                        onClick={() => handleDelete(order.id)}
+                      >
+                        حذف
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <p className="text-gray-500">تاریخ</p>
+                      <p className="text-gray-900">
+                        {order.day ? moment(order.day).format('jYYYY/jMM/jDD') : '-'}
+                        {order.time && <span className="text-gray-500 mr-2">ساعت: {order.time}</span>}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500">مبدا</p>
+                      <p className="text-gray-900">{order.fromUnit || '-'}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500">مقصد</p>
+                      <p className="text-gray-900">
+                        {order.destinations && order.destinations.length > 0
+                          ? `${order.destinations.length} مقصد`
+                          : '-'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       )}

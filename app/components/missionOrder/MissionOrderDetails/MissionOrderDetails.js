@@ -7,6 +7,8 @@ import dynamic from 'next/dynamic';
 import 'leaflet/dist/leaflet.css';
 import { API_ENDPOINTS } from "@/app/config/api";
 import Button from '@/app/components/ui/Button/Button';
+import moment from 'moment';
+import jalaali from 'jalaali-js';
 
 // تنظیم آیکون‌های پیش‌فرض لیفلت در سطح ماژول
 if (typeof window !== 'undefined') {
@@ -220,6 +222,18 @@ const MissionOrderDetails = ({ missionOrderId }) => {
     }
   };
 
+  const formatPersianDate = (dateString) => {
+    if (!dateString) return '';
+    try {
+      const [year, month, day] = dateString.split('-').map(Number);
+      const persianDate = jalaali.toJalaali(year, month, day);
+      return `${persianDate.jy}/${String(persianDate.jm).padStart(2, '0')}/${String(persianDate.jd).padStart(2, '0')}`;
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      return dateString;
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-[400px]">
@@ -264,144 +278,11 @@ const MissionOrderDetails = ({ missionOrderId }) => {
     : originCoords || [31.348808655624506, 48.72288275224326]; // Default coordinates if none available
 
   return (
-    <div className="container mx-auto px-4 py-6">
-      <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-        {/* Header */}
-        <div className="p-6 border-b border-gray-200">
-          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center">
-            <h1 className="text-2xl font-bold text-gray-800 mb-4 sm:mb-0">
-              {missionOrder.missionSubject || 'حکم ماموریت'}
-            </h1>
-            <div className="flex space-x-2 space-x-reverse">
-              <Link href={`/dashboard/missionOrder/edit/${missionOrderId}`}>
-                <Button variant="secondary">
-                  ویرایش
-                </Button>
-              </Link>
-              <Button 
-                variant="danger"
-                onClick={() => setShowDeleteConfirm(true)}
-              >
-                حذف
-              </Button>
-            </div>
-          </div>
-        </div>
-
-        {/* Map Section */}
-        <div className="p-6 border-b border-gray-200">
-          <h2 className="text-lg font-semibold mb-4">مسیر ماموریت</h2>
-          <div className="w-full h-[400px] border rounded-lg relative">
-            <MapContainer
-              center={mapCenter}
-              zoom={12}
-              style={{
-                height: '100%',
-                width: '100%',
-              }}
-              scrollWheelZoom={true}
-            >
-              <TileLayer
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-              />
-              {/* Origin Marker */}
-              {originCoords && (
-                <Marker position={originCoords} />
-              )}
-              {/* Destination Markers */}
-              {missionOrder.destinations && Array.isArray(missionOrder.destinations) && missionOrder.destinations.map((dest, index) => (
-                <Marker key={index} position={[dest.lat, dest.lng]} />
-              ))}
-              {/* Route Line */}
-              {route && <Polyline positions={route} color="blue" weight={3} />}
-            </MapContainer>
-          </div>
-
-          {/* Destinations List */}
-          {missionOrder.destinations && Array.isArray(missionOrder.destinations) && missionOrder.destinations.length > 0 && (
-            <div className="mt-4 bg-gray-50 p-4 rounded-lg">
-              <h3 className="text-md font-medium mb-2">مقاصد</h3>
-              <div className="space-y-2">
-                {missionOrder.destinations.map((dest, index) => (
-                  <div key={index} className="bg-white p-3 rounded-lg border border-gray-200">
-                    <span className="font-medium">{index + 1}. </span>
-                    <span>{dest.title}</span>
-                    <span className="text-sm text-gray-500 mr-2">({dest.lat.toFixed(4)}, {dest.lng.toFixed(4)})</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Mission Info */}
-        <div className="p-6 border-b border-gray-200">
-          <h2 className="text-lg font-semibold mb-4">اطلاعات ماموریت</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div>
-              <p className="text-sm text-gray-500">نام و نام خانوادگی</p>
-              <p className="font-medium">{`${missionOrder.firstName || ''} ${missionOrder.lastName || ''}`}</p>
-            </div>
-            {missionOrder.personnelNumber && (
-              <div>
-                <p className="text-sm text-gray-500">کد پرسنلی</p>
-                <p className="font-medium">{missionOrder.personnelNumber}</p>
-              </div>
-            )}
-            <div>
-              <p className="text-sm text-gray-500">تاریخ</p>
-              <p className="font-medium">{missionOrder.day || '-'}</p>
-            </div>
-            {missionOrder.time && (
-              <div>
-                <p className="text-sm text-gray-500">ساعت</p>
-                <p className="font-medium">{missionOrder.time}</p>
-              </div>
-            )}
-            <div>
-              <p className="text-sm text-gray-500">واحد مبدا</p>
-              <p className="font-medium">{missionOrder.fromUnit || '-'}</p>
-            </div>
-            {missionOrder.companions && (
-              <div>
-                <p className="text-sm text-gray-500">همراهان</p>
-                <p className="font-medium">{missionOrder.companions}</p>
-              </div>
-            )}
-            {missionOrder.transport && (
-              <div>
-                <p className="text-sm text-gray-500">وسیله نقلیه</p>
-                <p className="font-medium">{missionOrder.transport}</p>
-              </div>
-            )}
-            {missionOrder.totalWeightKg && (
-              <div>
-                <p className="text-sm text-gray-500">وزن کل (کیلوگرم)</p>
-                <p className="font-medium">{missionOrder.totalWeightKg}</p>
-              </div>
-            )}
-            <div>
-              <p className="text-sm text-gray-500">مسافت (کیلومتر)</p>
-              <p className="font-medium">{missionOrder.distance || '0'}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">مسافت رفت و برگشت (کیلومتر)</p>
-              <p className="font-medium">{missionOrder.roundTripDistance || '0'}</p>
-            </div>
-          </div>
-
-          {missionOrder.missionDescription && (
-            <div className="mt-4">
-              <p className="text-sm text-gray-500">توضیحات ماموریت</p>
-              <p className="mt-1 whitespace-pre-wrap bg-gray-50 p-3 rounded-lg">{missionOrder.missionDescription}</p>
-            </div>
-          )}
-        </div>
-
-        {/* Footer */}
-        <div className="p-6">
-          <div className="flex justify-between">
+    <div className="container mx-auto px-2 sm:px-4 max-w-full sm:max-w-7xl">
+      <div className="bg-white rounded-lg shadow-lg p-2 sm:p-6">
+        <div className="flex justify-between items-center mb-4 sm:mb-6">
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-800">جزئیات حکم ماموریت</h1>
+          <div className="flex gap-2">
             <Button
               variant="secondary"
               onClick={() => router.push('/dashboard/missionOrder')}
@@ -409,21 +290,194 @@ const MissionOrderDetails = ({ missionOrderId }) => {
               بازگشت به لیست
             </Button>
             <Link href={`/dashboard/missionOrder/edit/${missionOrderId}`}>
-              <Button variant="primary">
-                ویرایش
-              </Button>
+              <Button variant="primary">ویرایش</Button>
             </Link>
+            <Button
+              variant="danger"
+              onClick={() => setShowDeleteConfirm(true)}
+            >
+              حذف
+            </Button>
+          </div>
+        </div>
+
+        {/* نقشه */}
+        <div className="w-full h-[400px] border rounded-lg mb-6">
+          <MapContainer
+            center={originCoords || [31.348808655624506, 48.72288275224326]}
+            zoom={13}
+            style={{ height: '100%', width: '100%' }}
+            scrollWheelZoom={true}
+          >
+            <TileLayer
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            />
+            {originCoords && <Marker position={originCoords} />}
+            {missionOrder?.destinations?.map((dest, index) => (
+              <Marker key={index} position={[dest.lat, dest.lng]} />
+            ))}
+            {route && <Polyline positions={route} color="blue" weight={3} />}
+          </MapContainer>
+        </div>
+
+        {/* اطلاعات مسیر */}
+        <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 mb-6">
+          <h2 className="text-lg font-medium text-gray-800 mb-4">اطلاعات مسیر</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">مسافت کل مسیر (کیلومتر)</label>
+              <input
+                type="text"
+                value={missionOrder?.distance || '0'}
+                readOnly
+                className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md text-gray-700"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">مسافت رفت و برگشت (کیلومتر)</label>
+              <input
+                type="text"
+                value={missionOrder?.roundTripDistance || '0'}
+                readOnly
+                className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md text-gray-700"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">مدت زمان رفت (ساعت)</label>
+              <input
+                type="text"
+                value={missionOrder?.estimatedTime ? `${missionOrder.estimatedTime} ساعت` : '0 ساعت'}
+                readOnly
+                className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md text-gray-700"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">مدت زمان رفت و برگشت (ساعت)</label>
+              <input
+                type="text"
+                value={missionOrder?.estimatedReturnTime ? `${missionOrder.estimatedReturnTime} ساعت` : '0 ساعت'}
+                readOnly
+                className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md text-gray-700"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* اطلاعات اصلی */}
+        <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+          <h2 className="text-lg font-medium text-gray-800 mb-4">اطلاعات اصلی</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">تاریخ</label>
+              <input
+                type="text"
+                value={formatPersianDate(missionOrder?.day)}
+                readOnly
+                className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md text-gray-700"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">واحد مبدا</label>
+              <input
+                type="text"
+                value={missionOrder?.fromUnit || ''}
+                readOnly
+                className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md text-gray-700"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">نام</label>
+              <input
+                type="text"
+                value={missionOrder?.firstName || ''}
+                readOnly
+                className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md text-gray-700"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">نام خانوادگی</label>
+              <input
+                type="text"
+                value={missionOrder?.lastName || ''}
+                readOnly
+                className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md text-gray-700"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">کد پرسنلی</label>
+              <input
+                type="text"
+                value={missionOrder?.personnelNumber || ''}
+                readOnly
+                className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md text-gray-700"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">ساعت</label>
+              <input
+                type="text"
+                value={missionOrder?.time || ''}
+                readOnly
+                className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md text-gray-700"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">موضوع ماموریت</label>
+              <input
+                type="text"
+                value={missionOrder?.missionSubject || ''}
+                readOnly
+                className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md text-gray-700"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">همراهان</label>
+              <input
+                type="text"
+                value={missionOrder?.companions || ''}
+                readOnly
+                className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md text-gray-700"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">نوع وسیله نقلیه</label>
+              <input
+                type="text"
+                value={missionOrder?.transport || ''}
+                readOnly
+                className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md text-gray-700"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">وزن کل (کیلوگرم)</label>
+              <input
+                type="text"
+                value={missionOrder?.totalWeightKg || '0'}
+                readOnly
+                className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md text-gray-700"
+              />
+            </div>
+            <div className="lg:col-span-3">
+              <label className="block text-sm font-medium text-gray-700 mb-1">توضیحات ماموریت</label>
+              <textarea
+                value={missionOrder?.missionDescription || ''}
+                readOnly
+                rows="4"
+                className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md text-gray-700"
+              />
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Delete Confirmation Dialog */}
+      {/* Modal تایید حذف */}
       {showDeleteConfirm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-lg p-6 max-w-md w-full">
-            <h3 className="text-xl font-bold mb-4">حذف حکم ماموریت</h3>
-            <p className="mb-6">آیا از حذف این حکم ماموریت اطمینان دارید؟ این عملیات غیرقابل بازگشت است.</p>
-            <div className="flex justify-end space-x-2 space-x-reverse">
+            <h3 className="text-lg font-medium text-gray-900 mb-4">تایید حذف</h3>
+            <p className="text-gray-600 mb-4">آیا از حذف این حکم ماموریت اطمینان دارید؟</p>
+            <div className="flex justify-end gap-2">
               <Button
                 variant="secondary"
                 onClick={() => setShowDeleteConfirm(false)}
