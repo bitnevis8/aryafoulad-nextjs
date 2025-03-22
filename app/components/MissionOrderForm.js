@@ -9,6 +9,7 @@ import DatePicker from 'react-multi-date-picker';
 import persian from 'react-date-object/calendars/persian';
 import persian_fa from 'react-date-object/locales/persian_fa';
 import jalaali from 'jalaali-js';
+import { API_ENDPOINTS } from "@/app/config/api";
 
 // تنظیم آیکون‌های پیش‌فرض لیفلت در سطح ماژول
 if (typeof window !== 'undefined') {
@@ -87,24 +88,20 @@ const MissionOrderForm = () => {
   useEffect(() => {
     const fetchUnitLocations = async () => {
       try {
-        const baseUrl = process.env.NODE_ENV === 'development' 
-          ? 'http://localhost:3000'
-          : process.env.NEXT_PUBLIC_PRODUCTION_API_URL || '';
-
-        const response = await fetch(`${baseUrl}/aryafoulad/unit-locations`);
+        const response = await fetch(API_ENDPOINTS.unitLocations.getAll);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
         const data = await response.json();
-        
-        if (data.success && data.data) {
-          setUnitLocations(data.data);
-          // Set default unit
-          const defaultUnit = data.data.find(unit => unit.isDefault);
-          if (defaultUnit) {
-            setSelectedUnit(defaultUnit);
-            setValue('fromUnit', defaultUnit.name); // Set the fromUnit value
-          }
+        setUnitLocations(data.data || []);
+        // Set default unit
+        const defaultUnit = data.data.find(unit => unit.isDefault);
+        if (defaultUnit) {
+          setSelectedUnit(defaultUnit);
+          setValue('fromUnit', defaultUnit.name); // Set the fromUnit value
         }
       } catch (error) {
-        console.error('Error fetching unit locations:', error);
+        console.error("Error fetching unit locations:", error);
       }
     };
 
@@ -220,11 +217,7 @@ const MissionOrderForm = () => {
 
   const onSubmit = async (data) => {
     try {
-      const baseUrl = process.env.NODE_ENV === 'development' 
-        ? 'http://localhost:3000'
-        : process.env.NEXT_PUBLIC_PRODUCTION_API_URL || '';
-
-      const response = await fetch(`${baseUrl}/aryafoulad/mission-orders/create`, {
+      const response = await fetch(API_ENDPOINTS.missionOrders.create, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
