@@ -88,17 +88,19 @@ const MissionOrderForm = () => {
   useEffect(() => {
     const fetchUnitLocations = async () => {
       try {
+        console.log('Fetching from:', API_ENDPOINTS.unitLocations.getAll); // برای دیباگ
         const response = await fetch(API_ENDPOINTS.unitLocations.getAll);
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         const data = await response.json();
+        console.log('Response data:', data); // برای دیباگ
         setUnitLocations(data.data || []);
         // Set default unit
         const defaultUnit = data.data.find(unit => unit.isDefault);
         if (defaultUnit) {
           setSelectedUnit(defaultUnit);
-          setValue('fromUnit', defaultUnit.name); // Set the fromUnit value
+          setValue('fromUnit', defaultUnit.name);
         }
       } catch (error) {
         console.error("Error fetching unit locations:", error);

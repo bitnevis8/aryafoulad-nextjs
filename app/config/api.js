@@ -1,4 +1,6 @@
+// بررسی محیط اجرا
 const isDevelopment = process.env.NODE_ENV === 'development';
+console.log('Current environment:', process.env.NODE_ENV); // برای دیباگ
 
 export const API_BASE_URL = isDevelopment
   ? 'http://localhost:3000'
