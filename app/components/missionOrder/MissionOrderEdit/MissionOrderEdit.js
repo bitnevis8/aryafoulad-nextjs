@@ -1,7 +1,8 @@
 "use client"
 
-import dynamic from 'next/dynamic';
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import { useForm } from 'react-hook-form';
 import 'leaflet/dist/leaflet.css';
 import { useMapEvents } from 'react-leaflet';
@@ -10,6 +11,7 @@ import persian from 'react-date-object/calendars/persian';
 import persian_fa from 'react-date-object/locales/persian_fa';
 import jalaali from 'jalaali-js';
 import { API_ENDPOINTS } from "@/app/config/api";
+import Button from '@/app/components/ui/Button/Button';
 
 // تنظیم آیکون‌های پیش‌فرض لیفلت در سطح ماژول
 if (typeof window !== 'undefined') {
@@ -42,8 +44,6 @@ const Polyline = dynamic(
   { ssr: false }
 );
 
-const ARYAFOULAD_COORDS = [31.348808655624506, 48.72288275224326]; // مختصات اریا فولاد
-
 // کامپوننت برای هندل کردن رویداد کلیک روی نقشه
 const MapEvents = ({ onLocationSelect }) => {
   useMapEvents({
@@ -55,98 +55,203 @@ const MapEvents = ({ onLocationSelect }) => {
   return null;
 };
 
-const MissionOrderForm = () => {
-  const { register, handleSubmit, setValue, watch } = useForm({
-    defaultValues: {
-      firstName: '',
-      lastName: '',
-      personnelNumber: '',
-      fromUnit: '',
-      day: '',
-      time: '',
-      missionLocation: '',
-      missionCoordinates: '',
-      missionSubject: '',
-      missionDescription: '',
-      companions: '',
-      transport: '',
-      totalWeightKg: '',
-      destinations: [],
-      distance: '',
-      roundTripDistance: '',
-      estimatedTime: '',
-      estimatedReturnTime: '',
-    }
-  });
-
+const MissionOrderEdit = ({ missionOrderId }) => {
+  const router = useRouter();
+  const { register, handleSubmit, setValue, watch, reset } = useForm();
+  
+  const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [destinations, setDestinations] = useState([]);
   const [route, setRoute] = useState(null);
   const [unitLocations, setUnitLocations] = useState([]);
   const [selectedUnit, setSelectedUnit] = useState(null);
 
-  // Load unit locations on component mount
+  // Fetch mission order details and unit locations
   useEffect(() => {
-    const fetchUnitLocations = async () => {
+    const fetchData = async () => {
       try {
-        console.log('Fetching from:', API_ENDPOINTS.unitLocations.getAll); // برای دیباگ
-        const response = await fetch(API_ENDPOINTS.unitLocations.getAll);
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+        setInitialLoading(true);
+        
+        // Log the API endpoints being called
+        console.log('Fetching mission order from:', API_ENDPOINTS.missionOrders.getById(missionOrderId));
+        
+        // Fetch mission order
+        const orderResponse = await fetch(API_ENDPOINTS.missionOrders.getById(missionOrderId));
+        if (!orderResponse.ok) {
+          throw new Error(`Failed to fetch mission order: ${orderResponse.status}`);
         }
-        const data = await response.json();
-        console.log('Response data:', data); // برای دیباگ
-        setUnitLocations(data.data || []);
-        // Set default unit
-        const defaultUnit = data.data.find(unit => unit.isDefault);
-        if (defaultUnit) {
-          setSelectedUnit(defaultUnit);
-          setValue('fromUnit', defaultUnit.name);
+        const orderData = await orderResponse.json();
+        const missionOrder = orderData.data;
+        
+        console.log('Received mission order:', missionOrder);
+        
+        // Fetch unit locations first
+        const locationsResponse = await fetch(API_ENDPOINTS.unitLocations.getAll);
+        if (!locationsResponse.ok) {
+          throw new Error(`Failed to fetch unit locations: ${locationsResponse.status}`);
         }
-      } catch (error) {
-        console.error("Error fetching unit locations:", error);
+        const locationsData = await locationsResponse.json();
+        const units = locationsData.data || [];
+        setUnitLocations(units);
+        
+        // Find the selected unit
+        const unit = units.find(u => u.name === missionOrder.fromUnit);
+        console.log('Found unit:', unit);
+        if (!unit) {
+          console.warn('No matching unit found for:', missionOrder.fromUnit);
+          throw new Error('واحد مبدا یافت نشد');
+        }
+        
+        // Set selected unit first
+        setSelectedUnit(unit);
+        
+        // Process destinations
+        let processedDestinations = [];
+        if (missionOrder.destinations) {
+          try {
+            // If destinations is a string, try to parse it
+            if (typeof missionOrder.destinations === 'string') {
+              processedDestinations = JSON.parse(missionOrder.destinations);
+            } else {
+              processedDestinations = missionOrder.destinations;
+            }
+            
+            // Ensure destinations is an array
+            if (!Array.isArray(processedDestinations)) {
+              processedDestinations = [processedDestinations];
+            }
+            
+            // Ensure each destination has the correct format
+            processedDestinations = processedDestinations.map(dest => ({
+              lat: parseFloat(dest.lat),
+              lng: parseFloat(dest.lng),
+              title: dest.title || ''
+            }));
+            
+            console.log('Processed destinations:', processedDestinations);
+          } catch (e) {
+            console.error('Error processing destinations:', e);
+            processedDestinations = [];
+          }
+        }
+        
+        // Set destinations in state
+        setDestinations(processedDestinations);
+        
+        // Reset form with mission order data
+        reset({
+          ...missionOrder,
+          destinations: processedDestinations,
+          fromUnit: unit.name
+        });
+        
+        // Calculate route if we have both unit and destinations
+        if (processedDestinations.length > 0) {
+          console.log('Calculating initial route with unit:', unit);
+          console.log('And destinations:', processedDestinations);
+          
+          // Wait a bit to ensure state is updated
+          await new Promise(resolve => setTimeout(resolve, 500));
+          await calculateCompleteRoute(processedDestinations, unit);
+        }
+        
+        setError(null);
+      } catch (err) {
+        console.error("Error loading data:", err);
+        setError(err.message);
+      } finally {
+        setInitialLoading(false);
       }
     };
+    
+    if (missionOrderId) {
+      fetchData();
+    }
+  }, [missionOrderId, reset]);
 
-    fetchUnitLocations();
-  }, [setValue]);
-
-  const calculateCompleteRoute = async (points) => {
-    if (!selectedUnit || points.length < 1) return;
+  const calculateCompleteRoute = async (points, unitOverride = null) => {
+    const unit = unitOverride || selectedUnit;
+    
+    if (!unit) {
+      console.error('No unit selected for route calculation');
+      setError('لطفا واحد مبدا را انتخاب کنید');
+      return;
+    }
+    
+    if (!points || points.length < 1) {
+      console.error('No destinations for route calculation');
+      return;
+    }
     
     try {
-      console.log('Calculating route for points:', points);
+      console.log('Calculating route with unit:', unit);
+      console.log('And points:', points);
       
-      // Create waypoints string including origin from selected unit
-      const waypointsStr = [[selectedUnit.longitude, selectedUnit.latitude], ...points]
-        .map(point => Array.isArray(point) ? `${point[0]},${point[1]}` : `${point.lng},${point.lat}`)
+      // Ensure all coordinates are numbers
+      const waypoints = [
+        [parseFloat(unit.longitude), parseFloat(unit.latitude)], // مبدا
+        ...points.map(dest => [parseFloat(dest.lng), parseFloat(dest.lat)])     // مقصدها
+      ];
+      
+      console.log('Waypoints array:', waypoints);
+      
+      // Validate coordinates
+      if (waypoints.some(point => point.some(coord => isNaN(coord)))) {
+        throw new Error('Invalid coordinates found');
+      }
+      
+      // تبدیل نقاط به رشته با فرمت مورد نیاز OSRM
+      const waypointsStr = waypoints
+        .map(point => `${point[0]},${point[1]}`)
         .join(';');
       
-      const response = await fetch(
-        `https://router.project-osrm.org/route/v1/driving/${waypointsStr}?overview=full&geometries=geojson`
-      );
+      const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${waypointsStr}?overview=full&geometries=geojson`;
+      console.log('OSRM API request:', osrmUrl);
+      
+      const response = await fetch(osrmUrl);
+      
+      if (!response.ok) {
+        throw new Error(`Error fetching route: ${response.status}`);
+      }
+      
       const data = await response.json();
+      console.log('OSRM Response:', data);
 
       if (data.routes && data.routes[0]) {
-        setRoute(
-          data.routes[0].geometry.coordinates.map((coord) => [
-            coord[1],
-            coord[0],
-          ])
-        );
+        // تنظیم مسیر برای نمایش روی نقشه
+        const routeCoordinates = data.routes[0].geometry.coordinates.map((coord) => [
+          coord[1], // latitude
+          coord[0]  // longitude
+        ]);
         
-        const distance = data.routes[0].distance / 1000;
-        setValue('distance', distance.toFixed(2));
+        console.log('Setting route with coordinates:', routeCoordinates);
+        setRoute(routeCoordinates);
+        
+        // محاسبه و ذخیره مسافت و زمان
+        const distance = (data.routes[0].distance / 1000).toFixed(2); // تبدیل به کیلومتر
+        const duration = (data.routes[0].duration / 3600).toFixed(2); // تبدیل به ساعت
+        
+        console.log('Calculated values:', {
+          distance,
+          roundTripDistance: (distance * 2).toFixed(2),
+          duration,
+          roundTripDuration: (duration * 2).toFixed(2)
+        });
+        
+        // به‌روزرسانی فیلدهای فرم
+        setValue('distance', distance);
         setValue('roundTripDistance', (distance * 2).toFixed(2));
-        
-        // Calculate durations (assuming average speed of 60 km/h)
-        const oneWayDuration = distance / 60; // hours
-        const roundTripDuration = oneWayDuration * 2; // hours
-        
-        setValue('estimatedTime', oneWayDuration.toFixed(2));
-        setValue('estimatedReturnTime', roundTripDuration.toFixed(2));
+        setValue('estimatedTime', duration);
+        setValue('estimatedReturnTime', (duration * 2).toFixed(2));
+      } else {
+        console.error('No route found in response');
+        setRoute(null);
       }
     } catch (error) {
       console.error('Error calculating route:', error);
+      setRoute(null);
+      setError(`خطا در محاسبه مسیر: ${error.message}`);
     }
   };
 
@@ -219,28 +324,31 @@ const MissionOrderForm = () => {
 
   const onSubmit = async (data) => {
     try {
-      const response = await fetch(API_ENDPOINTS.missionOrders.create, {
-        method: 'POST',
+      setLoading(true);
+      const response = await fetch(API_ENDPOINTS.missionOrders.update(missionOrderId), {
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify({
+          ...data,
+          destinations: destinations
+        }),
       });
 
       if (response.ok) {
-        alert('حکم ماموریت با موفقیت ثبت شد');
-        // Reset form
-        Object.keys(data).forEach(key => setValue(key, ''));
-        setDestinations([]);
-        setRoute(null);
+        alert('حکم ماموریت با موفقیت به‌روز شد');
+        router.push('/dashboard/missionOrder');
       } else {
         const errorData = await response.json();
-        alert('خطا در ثبت حکم ماموریت: ' + (errorData.message || 'خطای نامشخص'));
+        alert('خطا در به‌روزرسانی حکم ماموریت: ' + (errorData.message || 'خطای نامشخص'));
       }
     } catch (error) {
-      console.error('Error submitting form:', error);
-      alert('خطا در ثبت حکم ماموریت. لطفاً دوباره تلاش کنید.');
+      console.error('Error updating mission order:', error);
+      alert('خطا در به‌روزرسانی حکم ماموریت. لطفاً دوباره تلاش کنید.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -258,10 +366,34 @@ const MissionOrderForm = () => {
     }
   };
 
+  if (initialLoading) {
+    return (
+      <div className="flex justify-center items-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-emerald-500"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-rose-100 text-rose-700 p-4 rounded-lg my-4">
+        <p className="font-medium">خطا در بارگیری اطلاعات</p>
+        <p>{error}</p>
+        <Button 
+          variant="secondary" 
+          className="mt-4"
+          onClick={() => router.push('/dashboard/missionOrder')}
+        >
+          بازگشت به لیست
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <div className="container mx-auto px-2 sm:px-4 max-w-full sm:max-w-7xl">
       <div className="bg-white rounded-lg shadow-lg p-2 sm:p-6">
-        <h1 className="text-xl sm:text-2xl font-bold text-gray-800 mb-4 sm:mb-6 text-center">حکم ماموریت</h1>
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-800 mb-4 sm:mb-6 text-center">ویرایش حکم ماموریت</h1>
         
         <div className="w-full h-[300px] sm:h-[400px] border rounded-lg mb-4 sm:mb-6 relative">
           <MapContainer
@@ -499,13 +631,21 @@ const MissionOrderForm = () => {
             />
           </div>
 
-          <div className="flex justify-end">
-            <button
-              type="submit"
-              className="w-full sm:w-auto px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors duration-200 text-sm sm:text-base"
+          <div className="flex justify-between">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => router.push('/dashboard/missionOrder')}
             >
-              ثبت حکم ماموریت
-            </button>
+              انصراف
+            </Button>
+            <Button
+              type="submit"
+              variant="primary"
+              disabled={loading}
+            >
+              {loading ? 'در حال به‌روزرسانی...' : 'به‌روزرسانی حکم ماموریت'}
+            </Button>
           </div>
         </form>
       </div>
@@ -513,10 +653,4 @@ const MissionOrderForm = () => {
   );
 };
 
-const MissionOrderFormComponent = MissionOrderForm;
-
-const MissionOrderFormDynamic = dynamic(() => Promise.resolve(MissionOrderFormComponent), {
-  ssr: false
-});
-
-export default MissionOrderFormDynamic; 
+export default MissionOrderEdit; 

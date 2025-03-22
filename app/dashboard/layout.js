@@ -13,12 +13,29 @@ export default function DashboardLayout({ children }) {
       icon: "🏠",
     },
     {
+      title: "ابلاغ ماموریت",
+      href: "/dashboard/missionOrder",
+      icon: "🚗",
+      submenu: [
+        {
+          title: "لیست ماموریت‌ها",
+          href: "/dashboard/missionOrder",
+          icon: "📋",
+        },
+        {
+          title: "ایجاد ماموریت جدید",
+          href: "/dashboard/missionOrder/create",
+          icon: "✏️",
+        },
+      ],
+    },
+    {
       title: "تنظیمات",
       href: "/dashboard/settings",
       icon: "⚙️",
       submenu: [
         {
-          title: "مدیریت واحدها",
+          title: "مدیریت مراکز",
           href: "/dashboard/settings/unit-locations",
           icon: "📍",
         },

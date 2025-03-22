@@ -55,7 +55,7 @@ const MapEvents = ({ onLocationSelect }) => {
   return null;
 };
 
-const MissionOrderForm = () => {
+const MissionOrderCreate = () => {
   const { register, handleSubmit, setValue, watch } = useForm({
     defaultValues: {
       firstName: '',
@@ -511,10 +511,10 @@ const MissionOrderForm = () => {
   );
 };
 
-const MissionOrderFormComponent = MissionOrderForm;
+const MissionOrderCreateComponent = MissionOrderCreate;
 
-const MissionOrderFormDynamic = dynamic(() => Promise.resolve(MissionOrderFormComponent), {
+const MissionOrderCreateDynamic = dynamic(() => Promise.resolve(MissionOrderCreateComponent), {
   ssr: false
 });
 
-export default MissionOrderFormDynamic; 
+export default MissionOrderCreateDynamic; 

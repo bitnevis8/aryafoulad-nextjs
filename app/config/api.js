@@ -18,8 +18,8 @@ export const API_ENDPOINTS = {
   },
   missionOrders: {
     base: `${API_BASE_URL}/aryafoulad/mission-orders`,
-    getAll: `${API_BASE_URL}/aryafoulad/mission-orders`,
-    getById: (id) => `${API_BASE_URL}/aryafoulad/mission-orders/${id}`,
+    getAll: `${API_BASE_URL}/aryafoulad/mission-orders/getAll`,
+    getById: (id) => `${API_BASE_URL}/aryafoulad/mission-orders/getOne/${id}`,
     create: `${API_BASE_URL}/aryafoulad/mission-orders/create`,
     update: (id) => `${API_BASE_URL}/aryafoulad/mission-orders/update/${id}`,
     delete: (id) => `${API_BASE_URL}/aryafoulad/mission-orders/delete/${id}`,

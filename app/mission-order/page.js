@@ -1,11 +1,2 @@
-import MissionOrderForm from '../components/MissionOrderForm';
-
-const MissionOrderPage = () => {
-    return (
-        <div className="min-h-screen w-full py-4">
-            <MissionOrderForm />
-        </div>
-    );
-};
-
-export default MissionOrderPage; 
+// This file is no longer needed and should be deleted
+// New mission order components are now in /app/dashboard/missionOrder/ 
