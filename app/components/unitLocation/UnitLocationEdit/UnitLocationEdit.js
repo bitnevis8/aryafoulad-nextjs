@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Card from "@/app/components/ui/Card/Card";
 import Input from "@/app/components/ui/Input/Input";
 import Button from "@/app/components/ui/Button/Button";
+import Map from "@/app/components/ui/Map/Map";
 import { API_ENDPOINTS } from "@/app/config/api";
 
 export default function UnitLocationEdit({ id }) {
@@ -76,6 +77,14 @@ export default function UnitLocationEdit({ id }) {
     }));
   };
 
+  const handleMapClick = ({ latitude, longitude }) => {
+    setFormData(prev => ({
+      ...prev,
+      latitude,
+      longitude
+    }));
+  };
+
   if (loading) return <div>در حال بارگذاری...</div>;
   if (error) return <div className="text-red-500">{error}</div>;
 
@@ -90,24 +99,46 @@ export default function UnitLocationEdit({ id }) {
           onChange={handleChange}
           required
         />
-        <Input
-          label="عرض جغرافیایی"
-          name="latitude"
-          type="number"
-          step="any"
-          value={formData.latitude}
-          onChange={handleChange}
-          required
-        />
-        <Input
-          label="طول جغرافیایی"
-          name="longitude"
-          type="number"
-          step="any"
-          value={formData.longitude}
-          onChange={handleChange}
-          required
-        />
+        
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-gray-700">
+            موقعیت روی نقشه
+          </label>
+          <Map
+            center={[formData.latitude, formData.longitude]}
+            markers={[{
+              latitude: formData.latitude,
+              longitude: formData.longitude,
+              name: formData.name || "موقعیت انتخاب شده"
+            }]}
+            onMapClick={handleMapClick}
+            height="300px"
+            showControls={true}
+            draggable={true}
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <Input
+            label="عرض جغرافیایی"
+            name="latitude"
+            type="number"
+            step="any"
+            value={formData.latitude}
+            onChange={handleChange}
+            required
+          />
+          <Input
+            label="طول جغرافیایی"
+            name="longitude"
+            type="number"
+            step="any"
+            value={formData.longitude}
+            onChange={handleChange}
+            required
+          />
+        </div>
+
         <div className="flex items-center gap-2">
           <input
             type="checkbox"

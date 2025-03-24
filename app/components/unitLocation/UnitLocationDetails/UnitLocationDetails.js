@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Card from "@/app/components/ui/Card/Card";
+import Map from "@/app/components/ui/Map/Map";
 import { API_ENDPOINTS } from "@/app/config/api";
 
 export default function UnitLocationDetails({ id }) {
@@ -78,9 +79,17 @@ export default function UnitLocationDetails({ id }) {
 
         <div>
           <h3 className="font-semibold mb-2">موقعیت روی نقشه</h3>
-          <div className="h-64 bg-gray-100 rounded-lg flex items-center justify-center">
-            نقشه در اینجا نمایش داده خواهد شد
-          </div>
+          <Map
+            center={[unit.latitude, unit.longitude]}
+            markers={[{
+              latitude: unit.latitude,
+              longitude: unit.longitude,
+              name: unit.name
+            }]}
+            height="300px"
+            showControls={true}
+            draggable={false}
+          />
         </div>
       </div>
     </Card>

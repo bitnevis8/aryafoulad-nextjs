@@ -9,10 +9,10 @@ import { API_ENDPOINTS } from "@/app/config/api";
 import Button from '@/app/components/ui/Button/Button';
 import moment from 'moment';
 import jalaali from 'jalaali-js';
+import L from 'leaflet';
 
 // تنظیم آیکون‌های پیش‌فرض لیفلت در سطح ماژول
 if (typeof window !== 'undefined') {
-  const L = require('leaflet');
   delete L.Icon.Default.prototype._getIconUrl;
   L.Icon.Default.mergeOptions({
     iconRetinaUrl:
@@ -24,6 +24,7 @@ if (typeof window !== 'undefined') {
   });
 }
 
+// Dynamic imports for react-leaflet components
 const MapContainer = dynamic(
   () => import('react-leaflet').then((mod) => mod.MapContainer),
   { ssr: false }
@@ -138,6 +139,36 @@ const MissionOrderDetails = ({ missionOrderId }) => {
     }
   }, [missionOrderId]);
 
+  useEffect(() => {
+    // اضافه کردن کنترل جستجو به نقشه
+    if (typeof window !== 'undefined') {
+      const map = document.querySelector('.leaflet-container')?.__leaflet_map;
+      if (map) {
+        // اضافه کردن کنترل جستجو
+        const searchControl = L.Control.geocoder({
+          position: 'topleft',
+          placeholder: 'جستجوی مکان...',
+          searchLabel: 'جستجو',
+          notFoundMessage: 'مکانی یافت نشد',
+          errorMessage: 'خطا در جستجو',
+          showResultIcons: true,
+          suggestMinLength: 3,
+          suggestTimeout: 250,
+          queryMinLength: 1,
+          defaultMarkGeocode: false,
+          geocoder: L.Control.Geocoder.nominatim({
+            geocodingQueryParams: {
+              countrycodes: 'ir',
+              limit: 5,
+              'accept-language': 'fa'
+            }
+          })
+        });
+        map.addControl(searchControl);
+      }
+    }
+  }, []);
+
   const calculateRoute = async (origin, destinations) => {
     try {
       // اطمینان از اینکه destinations یک آرایه است
@@ -152,7 +183,7 @@ const MissionOrderDetails = ({ missionOrderId }) => {
         return;
       }
       
-      // ساخت آرایه نقاط مسیر با فرمت صحیح
+      // ساخت آرایه نقاط مسیر رفت با فرمت صحیح
       const waypoints = [
         [origin.longitude, origin.latitude],
         ...destinations.map(dest => [dest.lng, dest.lat])
@@ -165,6 +196,7 @@ const MissionOrderDetails = ({ missionOrderId }) => {
       
       console.log('Waypoints for route calculation:', waypointsStr);
       
+      // محاسبه مسیر رفت
       const response = await fetch(
         `https://router.project-osrm.org/route/v1/driving/${waypointsStr}?overview=full&geometries=geojson`
       );
@@ -177,26 +209,56 @@ const MissionOrderDetails = ({ missionOrderId }) => {
       console.log('OSRM Response:', data);
 
       if (data.routes && data.routes[0]) {
-        // تنظیم مسیر برای نمایش روی نقشه
-        setRoute(
-          data.routes[0].geometry.coordinates.map((coord) => [
+        // تنظیم مسیر رفت برای نمایش روی نقشه
+        const forwardRoute = data.routes[0].geometry.coordinates.map((coord) => [
+          coord[1], // latitude
+          coord[0]  // longitude
+        ]);
+        
+        // محاسبه مسافت و زمان رفت
+        const forwardDistance = data.routes[0].distance / 1000; // تبدیل به کیلومتر
+        const forwardDuration = data.routes[0].duration / 3600; // تبدیل به ساعت
+
+        // محاسبه مسیر برگشت از آخرین مقصد به مبدا
+        const lastDestination = destinations[destinations.length - 1];
+        const returnWaypointsStr = `${lastDestination.lng},${lastDestination.lat};${origin.longitude},${origin.latitude}`;
+        
+        const returnResponse = await fetch(
+          `https://router.project-osrm.org/route/v1/driving/${returnWaypointsStr}?overview=full&geometries=geojson`
+        );
+
+        if (!returnResponse.ok) {
+          throw new Error(`Error fetching return route: ${returnResponse.status}`);
+        }
+
+        const returnData = await returnResponse.json();
+        
+        if (returnData.routes && returnData.routes[0]) {
+          // تنظیم مسیر برگشت برای نمایش روی نقشه
+          const returnRoute = returnData.routes[0].geometry.coordinates.map((coord) => [
             coord[1], // latitude
             coord[0]  // longitude
-          ])
-        );
-        
-        // محاسبه و ذخیره مسافت و زمان
-        const distance = (data.routes[0].distance / 1000).toFixed(2); // تبدیل به کیلومتر
-        const duration = (data.routes[0].duration / 3600).toFixed(2); // تبدیل به ساعت
-        
-        // به‌روزرسانی مقادیر در state
-        setMissionOrder(prev => ({
-          ...prev,
-          distance: distance,
-          roundTripDistance: (distance * 2).toFixed(2),
-          estimatedTime: duration,
-          estimatedReturnTime: (duration * 2).toFixed(2)
-        }));
+          ]);
+
+          // محاسبه مسافت و زمان برگشت
+          const returnDistance = returnData.routes[0].distance / 1000; // تبدیل به کیلومتر
+          const returnDuration = returnData.routes[0].duration / 3600; // تبدیل به ساعت
+
+          // به‌روزرسانی state با مسیرها و محاسبات جدید
+          setRoute({
+            forward: forwardRoute,
+            return: returnRoute
+          });
+          
+          // به‌روزرسانی مقادیر در state
+          setMissionOrder(prev => ({
+            ...prev,
+            distance: forwardDistance.toFixed(2),
+            roundTripDistance: (forwardDistance + returnDistance).toFixed(2),
+            estimatedTime: forwardDuration.toFixed(2),
+            estimatedReturnTime: (forwardDuration + returnDuration).toFixed(2)
+          }));
+        }
       } else {
         console.error('No route found in response');
       }
@@ -304,7 +366,7 @@ const MissionOrderDetails = ({ missionOrderId }) => {
         {/* نقشه */}
         <div className="w-full h-[400px] border rounded-lg mb-6">
           <MapContainer
-            center={originCoords || [31.348808655624506, 48.72288275224326]}
+            center={mapCenter}
             zoom={13}
             style={{ height: '100%', width: '100%' }}
             scrollWheelZoom={true}
@@ -317,7 +379,8 @@ const MissionOrderDetails = ({ missionOrderId }) => {
             {missionOrder?.destinations?.map((dest, index) => (
               <Marker key={index} position={[dest.lat, dest.lng]} />
             ))}
-            {route && <Polyline positions={route} color="blue" weight={3} />}
+            {route?.forward && <Polyline positions={route.forward} color="blue" weight={3} />}
+            {route?.return && <Polyline positions={route.return} color="red" weight={3} />}
           </MapContainer>
         </div>
 

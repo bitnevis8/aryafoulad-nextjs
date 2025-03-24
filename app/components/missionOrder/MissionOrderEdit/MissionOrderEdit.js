@@ -12,20 +12,7 @@ import persian_fa from 'react-date-object/locales/persian_fa';
 import jalaali from 'jalaali-js';
 import { API_ENDPOINTS } from "@/app/config/api";
 import Button from '@/app/components/ui/Button/Button';
-
-// تنظیم آیکون‌های پیش‌فرض لیفلت در سطح ماژول
-if (typeof window !== 'undefined') {
-  const L = require('leaflet');
-  delete L.Icon.Default.prototype._getIconUrl;
-  L.Icon.Default.mergeOptions({
-    iconRetinaUrl:
-      'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
-    iconUrl:
-      'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
-    shadowUrl:
-      'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-  });
-}
+import LeafletConfig from '@/app/components/map/LeafletConfig';
 
 const MapContainer = dynamic(
   () => import('react-leaflet').then((mod) => mod.MapContainer),
@@ -155,7 +142,7 @@ const MissionOrderEdit = ({ missionOrderId }) => {
         
         // Calculate route if we have both unit and destinations
         if (processedDestinations.length > 0) {
-          await calculateCompleteRoute(processedDestinations, unit);
+          await calculateRoute(unit, processedDestinations);
         }
         
       } catch (err) {
@@ -171,46 +158,37 @@ const MissionOrderEdit = ({ missionOrderId }) => {
     }
   }, [missionOrderId, reset]);
 
-  const calculateCompleteRoute = async (points, unitOverride = null) => {
-    const unit = unitOverride || selectedUnit;
-    
-    if (!unit) {
-      console.error('No unit selected for route calculation');
-      setError('لطفا واحد مبدا را انتخاب کنید');
-      return;
-    }
-    
-    if (!points || points.length < 1) {
-      console.error('No destinations for route calculation');
-      return;
-    }
-    
+  const calculateRoute = async (origin, destinations) => {
     try {
-      console.log('Calculating route with unit:', unit);
-      console.log('And points:', points);
-      
-      // Ensure all coordinates are numbers
-      const waypoints = [
-        [parseFloat(unit.longitude), parseFloat(unit.latitude)], // مبدا
-        ...points.map(dest => [parseFloat(dest.lng), parseFloat(dest.lat)])     // مقصدها
-      ];
-      
-      console.log('Waypoints array:', waypoints);
-      
-      // Validate coordinates
-      if (waypoints.some(point => point.some(coord => isNaN(coord)))) {
-        throw new Error('Invalid coordinates found');
+      // اطمینان از اینکه destinations یک آرایه است
+      if (!Array.isArray(destinations)) {
+        console.log('Destinations is not an array in calculateRoute, converting:', destinations);
+        destinations = Array.isArray(destinations) ? destinations : [];
       }
+      
+      // بررسی میکنیم که آیا آرایه destinations خالی نیست
+      if (destinations.length === 0) {
+        console.log('No destinations to calculate route');
+        return;
+      }
+      
+      // ساخت آرایه نقاط مسیر رفت با فرمت صحیح
+      const waypoints = [
+        [origin.longitude, origin.latitude],
+        ...destinations.map(dest => [dest.lng, dest.lat])
+      ];
       
       // تبدیل نقاط به رشته با فرمت مورد نیاز OSRM
       const waypointsStr = waypoints
         .map(point => `${point[0]},${point[1]}`)
         .join(';');
       
-      const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${waypointsStr}?overview=full&geometries=geojson`;
-      console.log('OSRM API request:', osrmUrl);
+      console.log('Waypoints for route calculation:', waypointsStr);
       
-      const response = await fetch(osrmUrl);
+      // محاسبه مسیر رفت
+      const response = await fetch(
+        `https://router.project-osrm.org/route/v1/driving/${waypointsStr}?overview=full&geometries=geojson`
+      );
       
       if (!response.ok) {
         throw new Error(`Error fetching route: ${response.status}`);
@@ -220,39 +198,58 @@ const MissionOrderEdit = ({ missionOrderId }) => {
       console.log('OSRM Response:', data);
 
       if (data.routes && data.routes[0]) {
-        // تنظیم مسیر برای نمایش روی نقشه
-        const routeCoordinates = data.routes[0].geometry.coordinates.map((coord) => [
+        // تنظیم مسیر رفت برای نمایش روی نقشه
+        const forwardRoute = data.routes[0].geometry.coordinates.map((coord) => [
           coord[1], // latitude
           coord[0]  // longitude
         ]);
         
-        console.log('Setting route with coordinates:', routeCoordinates);
-        setRoute(routeCoordinates);
+        // محاسبه مسافت و زمان رفت
+        const forwardDistance = data.routes[0].distance / 1000; // تبدیل به کیلومتر
+        const forwardDuration = data.routes[0].duration / 3600; // تبدیل به ساعت
+
+        // محاسبه مسیر برگشت از آخرین مقصد به مبدا
+        const lastDestination = destinations[destinations.length - 1];
+        const returnWaypointsStr = `${lastDestination.lng},${lastDestination.lat};${origin.longitude},${origin.latitude}`;
         
-        // محاسبه و ذخیره مسافت و زمان
-        const distance = (data.routes[0].distance / 1000).toFixed(2); // تبدیل به کیلومتر
-        const duration = (data.routes[0].duration / 3600).toFixed(2); // تبدیل به ساعت
+        const returnResponse = await fetch(
+          `https://router.project-osrm.org/route/v1/driving/${returnWaypointsStr}?overview=full&geometries=geojson`
+        );
+
+        if (!returnResponse.ok) {
+          throw new Error(`Error fetching return route: ${returnResponse.status}`);
+        }
+
+        const returnData = await returnResponse.json();
         
-        console.log('Calculated values:', {
-          distance,
-          roundTripDistance: (distance * 2).toFixed(2),
-          duration,
-          roundTripDuration: (duration * 2).toFixed(2)
-        });
-        
-        // به‌روزرسانی فیلدهای فرم
-        setValue('distance', distance);
-        setValue('roundTripDistance', (distance * 2).toFixed(2));
-        setValue('estimatedTime', duration);
-        setValue('estimatedReturnTime', (duration * 2).toFixed(2));
+        if (returnData.routes && returnData.routes[0]) {
+          // تنظیم مسیر برگشت برای نمایش روی نقشه
+          const returnRoute = returnData.routes[0].geometry.coordinates.map((coord) => [
+            coord[1], // latitude
+            coord[0]  // longitude
+          ]);
+
+          // محاسبه مسافت و زمان برگشت
+          const returnDistance = returnData.routes[0].distance / 1000; // تبدیل به کیلومتر
+          const returnDuration = returnData.routes[0].duration / 3600; // تبدیل به ساعت
+
+          // به‌روزرسانی state با مسیرها و محاسبات جدید
+          setRoute({
+            forward: forwardRoute,
+            return: returnRoute
+          });
+          
+          // به‌روزرسانی مقادیر در state
+          setValue('distance', forwardDistance.toFixed(2));
+          setValue('roundTripDistance', (forwardDistance + returnDistance).toFixed(2));
+          setValue('estimatedTime', forwardDuration.toFixed(2));
+          setValue('estimatedReturnTime', (forwardDuration + returnDuration).toFixed(2));
+        }
       } else {
         console.error('No route found in response');
-        setRoute(null);
       }
     } catch (error) {
       console.error('Error calculating route:', error);
-      setRoute(null);
-      setError(`خطا در محاسبه مسیر: ${error.message}`);
     }
   };
 
@@ -264,7 +261,7 @@ const MissionOrderEdit = ({ missionOrderId }) => {
     
     // Recalculate route with new origin
     if (destinations.length > 0) {
-      await calculateCompleteRoute(destinations);
+      await calculateRoute(unit, destinations);
     }
   };
 
@@ -293,7 +290,7 @@ const MissionOrderEdit = ({ missionOrderId }) => {
       setValue('missionLocation', locationTitle);
 
       // Calculate new route with all destinations
-      await calculateCompleteRoute(updatedDestinations);
+      await calculateRoute(selectedUnit, updatedDestinations);
     } catch (error) {
       console.error('Error getting location details:', error);
     }
@@ -319,7 +316,7 @@ const MissionOrderEdit = ({ missionOrderId }) => {
     }
 
     if (updatedDestinations.length > 0) {
-      await calculateCompleteRoute(updatedDestinations);
+      await calculateRoute(selectedUnit, updatedDestinations);
     }
   };
 
@@ -379,6 +376,7 @@ const MissionOrderEdit = ({ missionOrderId }) => {
 
   return (
     <div className="container mx-auto px-2 sm:px-4 max-w-full sm:max-w-7xl">
+      <LeafletConfig />
       <div className="bg-white rounded-lg shadow-lg p-2 sm:p-6">
         <h1 className="text-xl sm:text-2xl font-bold text-gray-800 mb-4 sm:mb-6 text-center">ویرایش حکم ماموریت</h1>
         
@@ -389,16 +387,11 @@ const MissionOrderEdit = ({ missionOrderId }) => {
           </div>
         )}
 
-        <div className="w-full h-[300px] sm:h-[400px] border rounded-lg mb-4 sm:mb-6 relative">
+        <div className="w-full h-[400px] border rounded-lg mb-6">
           <MapContainer
             center={selectedUnit ? [selectedUnit.latitude, selectedUnit.longitude] : [31.348808655624506, 48.72288275224326]}
             zoom={13}
-            style={{
-              height: '100%',
-              width: '100%',
-              position: 'relative',
-              zIndex: 1,
-            }}
+            style={{ height: '100%', width: '100%' }}
             scrollWheelZoom={true}
           >
             <TileLayer
@@ -411,15 +404,10 @@ const MissionOrderEdit = ({ missionOrderId }) => {
             {destinations.map((dest, index) => (
               <Marker key={index} position={[dest.lat, dest.lng]} />
             ))}
-            {route && <Polyline positions={route} color="blue" weight={3} />}
+            {route?.forward && <Polyline positions={route.forward} color="blue" weight={3} />}
+            {route?.return && <Polyline positions={route.return} color="red" weight={3} />}
             <MapEvents onLocationSelect={handleLocationSelect} />
           </MapContainer>
-          {watch('distance') && (
-            <div className="absolute bottom-4 right-4 bg-white p-2 sm:p-3 rounded-lg shadow-lg text-sm sm:text-base">
-              <span className="font-medium">فاصله: </span>
-              <span className="text-blue-600">{watch('distance')} کیلومتر</span>
-            </div>
-          )}
         </div>
 
         {/* Destinations List */}
