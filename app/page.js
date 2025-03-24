@@ -18,7 +18,7 @@ export default function Home() {
         <div className="absolute inset-0 bg-gradient-to-b from-black/60 to-black/40 flex items-center justify-center">
           <div className="text-center text-white px-4">
             <h1 className="text-5xl md:text-6xl font-bold mb-6">
-              شرکت بازرسی آریا فولاد قرن
+              شرکت بازرسی آریا فولاد قرن.
             </h1>
             <p className="text-xl md:text-2xl mb-8 max-w-3xl mx-auto">
               ارائه خدمات بازرسی، کنترل کیفیت و صدور گواهینامه‌های استاندارد
