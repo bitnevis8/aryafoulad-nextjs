@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { API_ENDPOINTS } from '@/app/config/api';
 import Button from '@/app/components/ui/Button/Button';
@@ -22,16 +22,7 @@ const CalibrationForm = ({ equipmentId, calibrationId = null }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    if (equipmentId) {
-      fetchEquipment();
-    }
-    if (calibrationId) {
-      fetchCalibration();
-    }
-  }, [equipmentId, calibrationId]);
-
-  const fetchEquipment = async () => {
+  const fetchEquipment = useCallback(async () => {
     try {
       const response = await fetch(API_ENDPOINTS.equipment.getById(equipmentId));
       const data = await response.json();
@@ -42,9 +33,9 @@ const CalibrationForm = ({ equipmentId, calibrationId = null }) => {
     } catch (err) {
       setError(err.message);
     }
-  };
+  }, [equipmentId]);
 
-  const fetchCalibration = async () => {
+  const fetchCalibration = useCallback(async () => {
     try {
       setLoading(true);
       const response = await fetch(API_ENDPOINTS.calibrationHistory.getById(calibrationId));
@@ -65,7 +56,16 @@ const CalibrationForm = ({ equipmentId, calibrationId = null }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [calibrationId]);
+
+  useEffect(() => {
+    if (equipmentId) {
+      fetchEquipment();
+    }
+    if (calibrationId) {
+      fetchCalibration();
+    }
+  }, [equipmentId, calibrationId, fetchEquipment, fetchCalibration]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

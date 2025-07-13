@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { useForm } from 'react-hook-form';
@@ -230,34 +230,7 @@ const MissionOrderEdit = ({ missionOrderId }) => {
     }
   }, [missionOrderId, reset, rateLoading, defaultRate]);
 
-  useEffect(() => {
-    // Recalculate route when rate is loaded and data is ready
-    if (!rateLoading && defaultRate !== null && initialLoading === false && selectedUnit && destinations.length > 0) {
-      calculateRoute(selectedUnit, destinations, defaultRate);
-    }
-  }, [rateLoading, defaultRate, initialLoading, selectedUnit, destinations]);
-
-  // Fetch users for selection
-  useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        const response = await fetch(API_ENDPOINTS.users.getAll);
-        if (!response.ok) {
-          throw new Error('خطا در دریافت لیست کاربران');
-        }
-        const data = await response.json();
-        // Handle both old and new API response formats
-        const users = data.data && data.data.users ? data.data.users : data.data;
-        setUsers(users || []);
-      } catch (err) {
-        console.error('Error fetching users:', err);
-      }
-    };
-
-    fetchUsers();
-  }, []);
-
-  const calculateRoute = async (origin, destinations, currentRate) => {
+  const calculateRoute = useCallback(async (origin, destinations, currentRate) => {
     if (currentRate === null) {
       console.log("Rate not available for calculation.");
       return; 
@@ -285,7 +258,34 @@ const MissionOrderEdit = ({ missionOrderId }) => {
     } catch (error) {
       console.error('Error calculating route:', error);
     }
-  };
+  }, [setValue]);
+
+  useEffect(() => {
+    // Recalculate route when rate is loaded and data is ready
+    if (!rateLoading && defaultRate !== null && initialLoading === false && selectedUnit && destinations.length > 0) {
+      calculateRoute(selectedUnit, destinations, defaultRate);
+    }
+  }, [rateLoading, defaultRate, initialLoading, selectedUnit, destinations, calculateRoute]);
+
+  // Fetch users for selection
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const response = await fetch(API_ENDPOINTS.users.getAll);
+        if (!response.ok) {
+          throw new Error('خطا در دریافت لیست کاربران');
+        }
+        const data = await response.json();
+        // Handle both old and new API response formats
+        const users = data.data && data.data.users ? data.data.users : data.data;
+        setUsers(users || []);
+      } catch (err) {
+        console.error('Error fetching users:', err);
+      }
+    };
+
+    fetchUsers();
+  }, []);
 
   const handleUnitChange = async (e) => {
     const unitId = parseInt(e.target.value);

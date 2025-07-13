@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { API_ENDPOINTS } from '@/app/config/api';
 import Button from '@/app/components/ui/Button/Button';
@@ -16,13 +16,7 @@ const WarehouseForm = ({ warehouseId = null }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    if (warehouseId) {
-      fetchWarehouse();
-    }
-  }, [warehouseId]);
-
-  const fetchWarehouse = async () => {
+  const fetchWarehouse = useCallback(async () => {
     try {
       setLoading(true);
       const response = await fetch(API_ENDPOINTS.warehouse.getById(warehouseId));
@@ -44,7 +38,13 @@ const WarehouseForm = ({ warehouseId = null }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [warehouseId]);
+
+  useEffect(() => {
+    if (warehouseId) {
+      fetchWarehouse();
+    }
+  }, [warehouseId, fetchWarehouse]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

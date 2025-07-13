@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
@@ -72,6 +72,22 @@ const MissionOrderDetails = ({ missionOrderId }) => {
     fetchDefaultRate();
   }, []);
 
+  const calculateRoute = useCallback(async (origin, destinations, currentRate) => {
+    if (currentRate === null) { return; }
+    try {
+      const routeDetails = await calculateRouteDetails(origin, destinations);
+      setRoute({ forward: routeDetails.forwardRoute, return: routeDetails.returnRoute });
+      setValue('forwardDistance', routeDetails.forwardDistance);
+      setValue('returnDistance', routeDetails.returnDistance);
+      setValue('totalDistance', routeDetails.totalDistance);
+      setValue('forwardTime', routeDetails.forwardTime);
+      setValue('returnTime', routeDetails.returnTime);
+      setValue('totalTime', routeDetails.totalTime);
+      const finalCost = calculateFinalCost(routeDetails.totalDistance, currentRate);
+      setValue('finalCost', finalCost);
+    } catch (error) { console.error('Error calculating route:', error); }
+  }, [setValue]);
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -125,7 +141,7 @@ const MissionOrderDetails = ({ missionOrderId }) => {
       finally { setInitialLoading(false); }
     };
     if (missionOrderId) { fetchData(); }
-  }, [missionOrderId, reset, rateLoading, defaultRate, setValue]);
+  }, [missionOrderId, reset, rateLoading, defaultRate, setValue, calculateRoute]);
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -145,22 +161,6 @@ const MissionOrderDetails = ({ missionOrderId }) => {
 
     fetchUsers();
   }, []);
-
-  const calculateRoute = async (origin, destinations, currentRate) => {
-    if (currentRate === null) { return; }
-    try {
-      const routeDetails = await calculateRouteDetails(origin, destinations);
-      setRoute({ forward: routeDetails.forwardRoute, return: routeDetails.returnRoute });
-      setValue('forwardDistance', routeDetails.forwardDistance);
-      setValue('returnDistance', routeDetails.returnDistance);
-      setValue('totalDistance', routeDetails.totalDistance);
-      setValue('forwardTime', routeDetails.forwardTime);
-      setValue('returnTime', routeDetails.returnTime);
-      setValue('totalTime', routeDetails.totalTime);
-      const finalCost = calculateFinalCost(routeDetails.totalDistance, currentRate);
-      setValue('finalCost', finalCost);
-    } catch (error) { console.error('Error calculating route:', error); }
-  };
 
   const formatPersianDate = (dateValue) => {
       if (!dateValue) return '';

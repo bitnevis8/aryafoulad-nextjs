@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { API_ENDPOINTS } from '@/app/config/api';
 import Button from '@/app/components/ui/Button/Button';
@@ -15,13 +15,7 @@ const EquipmentHistory = ({ equipmentId }) => {
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('assignments');
 
-  useEffect(() => {
-    if (equipmentId) {
-      fetchEquipmentData();
-    }
-  }, [equipmentId]);
-
-  const fetchEquipmentData = async () => {
+  const fetchEquipmentData = useCallback(async () => {
     try {
       setLoading(true);
       
@@ -53,7 +47,13 @@ const EquipmentHistory = ({ equipmentId }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [equipmentId]);
+
+  useEffect(() => {
+    if (equipmentId) {
+      fetchEquipmentData();
+    }
+  }, [equipmentId, fetchEquipmentData]);
 
   const formatDate = (dateString) => {
     if (!dateString) return '-';

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { API_ENDPOINTS } from '@/app/config/api';
 import Button from '@/app/components/ui/Button/Button';
@@ -35,13 +35,7 @@ const EquipmentForm = ({ equipmentId = null }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    if (equipmentId) {
-      fetchEquipment();
-    }
-  }, [equipmentId]);
-
-  const fetchEquipment = async () => {
+  const fetchEquipment = useCallback(async () => {
     try {
       setLoading(true);
       const response = await fetch(API_ENDPOINTS.equipment.getById(equipmentId));
@@ -76,7 +70,13 @@ const EquipmentForm = ({ equipmentId = null }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [equipmentId]);
+
+  useEffect(() => {
+    if (equipmentId) {
+      fetchEquipment();
+    }
+  }, [equipmentId, fetchEquipment]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

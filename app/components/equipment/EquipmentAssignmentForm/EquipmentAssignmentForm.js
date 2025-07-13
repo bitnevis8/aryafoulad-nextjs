@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { API_ENDPOINTS } from '@/app/config/api';
 import Button from '@/app/components/ui/Button/Button';
@@ -23,13 +23,36 @@ const EquipmentAssignmentForm = ({ assignmentId = null }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  const fetchAssignment = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await fetch(API_ENDPOINTS.equipmentAssignments.getById(assignmentId));
+      const data = await response.json();
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || 'خطا در دریافت اطلاعات واگذاری');
+      }
+      const assignment = data.data;
+      setFormData({
+        equipmentId: assignment.equipment_id,
+        userId: assignment.user_id,
+        assigned_at: assignment.assigned_at ? assignment.assigned_at.split('T')[0] : '',
+        expected_return_date: assignment.expected_return_date ? assignment.expected_return_date.split('T')[0] : '',
+        notes: assignment.notes || ''
+      });
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, [assignmentId]);
+
   useEffect(() => {
     fetchEquipments();
     fetchUsers();
     if (assignmentId) {
       fetchAssignment();
     }
-  }, [assignmentId]);
+  }, [assignmentId, fetchAssignment]);
 
   const fetchEquipments = async () => {
     try {
@@ -58,29 +81,6 @@ const EquipmentAssignmentForm = ({ assignmentId = null }) => {
       setUsers(users || []);
     } catch (err) {
       setError(err.message);
-    }
-  };
-
-  const fetchAssignment = async () => {
-    try {
-      setLoading(true);
-      const response = await fetch(API_ENDPOINTS.equipmentAssignments.getById(assignmentId));
-      const data = await response.json();
-      if (!response.ok || !data.success) {
-        throw new Error(data.message || 'خطا در دریافت اطلاعات واگذاری');
-      }
-      const assignment = data.data;
-      setFormData({
-        equipmentId: assignment.equipment_id,
-        userId: assignment.user_id,
-        assigned_at: assignment.assigned_at ? assignment.assigned_at.split('T')[0] : '',
-        expected_return_date: assignment.expected_return_date ? assignment.expected_return_date.split('T')[0] : '',
-        notes: assignment.notes || ''
-      });
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
     }
   };
 
