@@ -23,6 +23,9 @@ export default function RateSettingsCreate() {
     setLoading(true);
     setError(null);
     try {
+      // تبدیل تاریخ به آبجکت مناسب اگر رشته باشد
+      const start = typeof startDate === 'string' ? new Date(startDate) : startDate;
+      const end = endDate && typeof endDate === 'string' ? new Date(endDate) : endDate;
       const response = await fetch(API_ENDPOINTS.rateSettings.create, {
         method: 'POST',
         headers: {
@@ -31,8 +34,8 @@ export default function RateSettingsCreate() {
         body: JSON.stringify({ 
           title, 
           ratePerKm: parseFloat(ratePerKm), 
-          startDate: startDate.toDate().toISOString().slice(0, 10),
-          endDate: endDate ? endDate.toDate().toISOString().slice(0, 10) : null,
+          startDate: start && start.toDate ? start.toDate().toISOString().slice(0, 10) : start.toISOString().slice(0, 10),
+          endDate: end ? (end.toDate ? end.toDate().toISOString().slice(0, 10) : end.toISOString().slice(0, 10)) : null,
           description 
         }),
       });

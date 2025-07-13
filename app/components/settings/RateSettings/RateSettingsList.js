@@ -145,16 +145,18 @@ export default function RateSettingsList() {
         </Button>
       </div>
       
-      {rates.length === 0 ? (
-        <div className="text-center py-12">
-          <div className="text-gray-500 text-lg mb-4">هیچ نرخی تعریف نشده است</div>
-          <Button variant="primary" onClick={handleCreateClick}>
-            ایجاد اولین نرخ
-          </Button>
-        </div>
-      ) : (
-        <Table columns={columns} data={rates} />
-      )}
+      <div className="overflow-x-auto">
+        {rates.length === 0 ? (
+          <div className="text-center py-12">
+            <div className="text-gray-500 text-lg mb-4">هیچ نرخی تعریف نشده است</div>
+            <Button variant="primary" onClick={handleCreateClick}>
+              ایجاد اولین نرخ
+            </Button>
+          </div>
+        ) : (
+          <Table columns={columns} data={rates} />
+        )}
+      </div>
     </div>
   );
 } 
