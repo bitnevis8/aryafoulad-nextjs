@@ -20,10 +20,18 @@ export async function POST(request) {
       },
     });
 
-    response.headers.set(
-      'Set-Cookie',
-      'token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; SameSite=Lax; Secure=false'
-    );
+    // Set-Cookie header for deleting the token cookie
+    const isProduction = process.env.NODE_ENV === 'production';
+    const cookieParts = [
+      'token=;',
+      'Path=/',
+      'Expires=Thu, 01 Jan 1970 00:00:00 GMT',
+      'HttpOnly',
+      isProduction ? 'Domain=.pourdian.com' : '',
+      isProduction ? 'SameSite=None' : 'SameSite=Lax',
+      isProduction ? 'Secure' : '',
+    ].filter(Boolean);
+    response.headers.set('Set-Cookie', cookieParts.join('; '));
 
     return response;
   } catch (error) {
