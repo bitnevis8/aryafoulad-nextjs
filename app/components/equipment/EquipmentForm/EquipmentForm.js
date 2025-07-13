@@ -87,7 +87,10 @@ const EquipmentForm = ({ equipmentId = null }) => {
       const apiData = {
         ...formData,
         purchase_price: formData.purchase_price ? parseFloat(formData.purchase_price) : null,
-        calibration_period_years: formData.calibration_period_years ? parseInt(formData.calibration_period_years) : null
+        calibration_period_years: formData.calibration_period_years ? parseInt(formData.calibration_period_years) : null,
+        last_calibration_date: (!formData.last_calibration_date || formData.last_calibration_date === 'Invalid date') ? null : formData.last_calibration_date,
+        next_calibration_date: (!formData.next_calibration_date || formData.next_calibration_date === 'Invalid date') ? null : formData.next_calibration_date,
+        purchase_date: (!formData.purchase_date || formData.purchase_date === 'Invalid date') ? null : formData.purchase_date,
       };
 
       const url = equipmentId ? API_ENDPOINTS.equipment.update(equipmentId) : API_ENDPOINTS.equipment.create;
