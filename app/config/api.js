@@ -101,4 +101,13 @@ export const API_ENDPOINTS = {
     me: `${API_BASE_URL}/user/auth/me`,
     logout: `${API_BASE_URL}/user/auth/logout`,
   },
+  leaveRequest: {
+    base: `${API_BASE_URL}/leave-request`,
+    create: `${API_BASE_URL}/leave-request/create`,
+    my: `${API_BASE_URL}/leave-request/my`,
+    all: `${API_BASE_URL}/leave-request/all`,
+    types: `${API_BASE_URL}/leave-request/types`,
+    approve: (id) => `${API_BASE_URL}/leave-request/approve/${id}`,
+    report: `${API_BASE_URL}/leave-request/report`,
+  },
 }; 

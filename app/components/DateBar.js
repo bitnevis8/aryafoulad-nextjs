@@ -23,7 +23,7 @@ export default function DateBar() {
   }, []);
 
   return (
-    <div className="bg-sky-950 border-b border-gray-800 py-2 px-8">
+    <div className="bg-sky-950 border-b border-gray-800 py-2 px-8 relative">
       <div className=" mx-auto px-8">
         <div className="text-sm text-sky-50 font-medium text-center">
           {persianDate}

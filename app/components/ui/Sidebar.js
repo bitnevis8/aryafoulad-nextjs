@@ -7,7 +7,8 @@ import {
   BuildingOffice2Icon as WarehouseIcon,
   CubeIcon as PackageIcon,
   ClipboardDocumentListIcon as ClipboardListIcon,
-  UserPlusIcon
+  UserPlusIcon,
+  CalendarDaysIcon
 } from '@heroicons/react/24/outline';
 
 const menuItems = [
@@ -71,6 +72,27 @@ const menuItems = [
       }
     ]
   },
+  // {
+  //   title: 'مدیریت مرخصی',
+  //   icon: <CalendarDaysIcon className="w-5 h-5" />,
+  //   submenu: [
+  //     {
+  //       title: 'گزارش مرخصی ها',
+  //       path: '/dashboard/leave-request',
+  //       icon: '📝'
+  //     },
+  //     {
+  //       title: 'ایجاد درخواست جدید',
+  //       path: '/dashboard/leave-request/create',
+  //       icon: '➕'
+  //     },
+  //     {
+  //       title: 'مدیریت درخواست‌ها',
+  //       path: '/dashboard/leave-request/management',
+  //       icon: '✅'
+  //     }
+  //   ]
+  // },
 ];
 
 export default function Sidebar({ onLinkClick }) {
