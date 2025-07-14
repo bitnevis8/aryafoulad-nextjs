@@ -5,8 +5,11 @@ export async function POST(request) {
     const body = await request.json();
     console.log('Creating leave request with data:', body);
     
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+    // در Next.js API routes، NODE_ENV درست کار نمی‌کند، پس مستقیماً از متغیر محیطی استفاده می‌کنیم
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://aryafoulad-api.pourdian.com';
     console.log('API URL:', apiUrl);
+    console.log('NODE_ENV:', process.env.NODE_ENV);
+    console.log('NEXT_PUBLIC_API_URL:', process.env.NEXT_PUBLIC_API_URL);
     
     // Get all cookies from the request
     const cookies = request.headers.get('cookie') || '';

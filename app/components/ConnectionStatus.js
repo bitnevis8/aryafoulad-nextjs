@@ -15,7 +15,7 @@ export default function ConnectionStatus() {
       setStatus('checking');
       setError(null);
       
-      const url = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+      const url = process.env.NEXT_PUBLIC_API_URL || 'https://aryafoulad-api.pourdian.com';
       setApiUrl(url);
       
       console.log('Checking connection to:', url);

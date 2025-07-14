@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 
 export async function GET(request) {
   try {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://aryafoulad-api.pourdian.com';
     const response = await fetch(`${apiUrl}/leave-request/my`, {
       method: 'GET',
       headers: {
