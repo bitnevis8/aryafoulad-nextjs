@@ -1,11 +1,13 @@
 import OnlineUsers from '../components/user/OnlineUsers';
 import WebSocketStatus from '../components/user/WebSocketStatus';
+import ConnectionStatus from '../components/ConnectionStatus';
 
 export default function DashboardPage() {
   return (
     <div className="p-4 md:p-6 bg-gray-100 min-h-screen">
       <h1 className="text-xl md:text-2xl font-bold text-gray-800 mb-6">داشبورد</h1>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+        <ConnectionStatus />
         <OnlineUsers />
         <WebSocketStatus />
         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
