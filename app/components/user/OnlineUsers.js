@@ -14,39 +14,24 @@ export default function OnlineUsers() {
     if (!user) return;
     // اتصال به سرور Socket.io
     const s = io(SOCKET_URL, {
-      transports: ['websocket', 'polling'],
+      transports: ['websocket'],
       withCredentials: true,
-      timeout: 20000,
-      forceNew: true
     });
     setSocket(s);
 
     // ارسال اطلاعات کاربر پس از اتصال
     s.on('connect', () => {
-      console.log('Socket connected to:', SOCKET_URL);
-      const userData = {
+      s.emit('user-online', {
         id: user.userId || user.id,
         firstName: user.firstName,
         lastName: user.lastName,
         email: user.email,
-      };
-      console.log('Sending user data:', userData);
-      s.emit('user-online', userData);
+      });
     });
 
     // دریافت لیست کاربران آنلاین
     s.on('online-users', (users) => {
-      console.log('Received online users:', users);
       setOnlineUsers(users);
-    });
-
-    // مدیریت خطاها
-    s.on('connect_error', (error) => {
-      console.error('Socket connection error:', error);
-    });
-
-    s.on('disconnect', (reason) => {
-      console.log('Socket disconnected:', reason);
     });
 
     return () => {
