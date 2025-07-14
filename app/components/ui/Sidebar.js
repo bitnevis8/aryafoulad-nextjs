@@ -7,8 +7,8 @@ import {
   BuildingOffice2Icon as WarehouseIcon,
   CubeIcon as PackageIcon,
   ClipboardDocumentListIcon as ClipboardListIcon,
-  UserPlusIcon,
-  CalendarDaysIcon
+  UserPlusIcon
+  // CalendarDaysIcon
 } from '@heroicons/react/24/outline';
 
 const menuItems = [
@@ -72,6 +72,7 @@ const menuItems = [
       }
     ]
   },
+  /*
   {
     title: 'مدیریت مرخصی',
     icon: <CalendarDaysIcon className="w-5 h-5" />,
@@ -93,6 +94,7 @@ const menuItems = [
       }
     ]
   },
+  */
 ];
 
 export default function Sidebar({ onLinkClick }) {
