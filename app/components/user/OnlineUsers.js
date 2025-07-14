@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { io } from 'socket.io-client';
 import { useAuth } from '@/app/context/AuthContext';
 
-const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || 'https://aryafoulad-api.pourdian.com';
+const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || (process.env.NODE_ENV === 'production' ? 'https://aryafoulad-api.pourdian.com:3010' : 'http://localhost:3000');
 
 export default function OnlineUsers() {
   const { user } = useAuth();
@@ -14,24 +14,39 @@ export default function OnlineUsers() {
     if (!user) return;
     // اتصال به سرور Socket.io
     const s = io(SOCKET_URL, {
-      transports: ['websocket'],
+      transports: ['websocket', 'polling'],
       withCredentials: true,
+      timeout: 20000,
+      forceNew: true
     });
     setSocket(s);
 
     // ارسال اطلاعات کاربر پس از اتصال
     s.on('connect', () => {
-      s.emit('user-online', {
+      console.log('Socket connected to:', SOCKET_URL);
+      const userData = {
         id: user.userId || user.id,
         firstName: user.firstName,
         lastName: user.lastName,
         email: user.email,
-      });
+      };
+      console.log('Sending user data:', userData);
+      s.emit('user-online', userData);
     });
 
     // دریافت لیست کاربران آنلاین
     s.on('online-users', (users) => {
+      console.log('Received online users:', users);
       setOnlineUsers(users);
+    });
+
+    // مدیریت خطاها
+    s.on('connect_error', (error) => {
+      console.error('Socket connection error:', error);
+    });
+
+    s.on('disconnect', (reason) => {
+      console.log('Socket disconnected:', reason);
     });
 
     return () => {
