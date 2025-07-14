@@ -2,7 +2,7 @@
 const isDevelopment = process.env.NODE_ENV === 'development';
 console.log('Current environment:', process.env.NODE_ENV); // برای دیباگ
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || (isDevelopment ? 'http://localhost:3000' : 'https://aryafoulad-api.pourdian.com:3010');
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || (isDevelopment ? 'http://localhost:3000' : 'https://aryafoulad-api.pourdian.com');
 
 export const API_ENDPOINTS = {
   unitLocations: {

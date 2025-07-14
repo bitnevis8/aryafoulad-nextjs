@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { io } from 'socket.io-client';
 import { useAuth } from '@/app/context/AuthContext';
 
-const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || (process.env.NODE_ENV === 'production' ? 'https://aryafoulad-api.pourdian.com:3010' : 'http://localhost:3000');
+const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || (process.env.NODE_ENV === 'production' ? 'https://aryafoulad-api.pourdian.com' : 'http://localhost:3000');
 
 export default function OnlineUsers() {
   const { user } = useAuth();
