@@ -38,7 +38,7 @@ const MissionOrderDetails = ({ missionOrderId }) => {
   const router = useRouter();
   const { register, watch, reset, setValue } = useForm({
     defaultValues: {
-      firstName: '', lastName: '', personnelNumber: '', fromUnit: '', day: '',
+      personnelNumber: '', fromUnit: '', day: '',
       time: '', missionLocation: '', missionCoordinates: '', missionSubject: '',
       missionDescription: '', companions: '', transport: '', totalWeightKg: '',
       destinations: [], distance: '', roundTripDistance: '', estimatedTime: '',
@@ -60,14 +60,30 @@ const MissionOrderDetails = ({ missionOrderId }) => {
     const fetchDefaultRate = async () => {
       setRateLoading(true);
       try {
-        const response = await fetch(API_ENDPOINTS.rateSettings.getById(1));
-        if (!response.ok) { throw new Error(`HTTP error! status: ${response.status}`); }
-        const data = await response.json();
-        if (data && data.data && data.data.ratePerKm) {
-          setDefaultRate(parseFloat(data.data.ratePerKm));
-        } else { setDefaultRate(0); }
-      } catch (error) { setDefaultRate(0); }
-      finally { setRateLoading(false); }
+        // Get current date in YYYY-MM-DD format
+        const today = new Date().toISOString().slice(0, 10);
+        const response = await fetch(API_ENDPOINTS.rateSettings.getRateByDate(today));
+        
+        if (response.ok) {
+          const data = await response.json();
+          if (data && data.data && data.data.ratePerKm) {
+            setDefaultRate(parseFloat(data.data.ratePerKm));
+          } else {
+            console.warn('No valid rate found for current date, using default 0');
+            setDefaultRate(0);
+          }
+        } else if (response.status === 404) {
+          console.warn('No active rate found for current date, using default 0');
+          setDefaultRate(0);
+        } else {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+      } catch (error) {
+        console.error("Error fetching default rate:", error);
+        setDefaultRate(0);
+      } finally {
+        setRateLoading(false);
+      }
     };
     fetchDefaultRate();
   }, []);
@@ -204,30 +220,6 @@ const MissionOrderDetails = ({ missionOrderId }) => {
               type: WidthType.PERCENTAGE,
             },
             rows: [
-              new TableRow({
-                children: [
-                  new TableCell({
-                    children: [new Paragraph({ text: "نام", alignment: AlignmentType.RIGHT })],
-                    width: { size: 50, type: WidthType.PERCENTAGE }
-                  }),
-                  new TableCell({
-                    children: [new Paragraph({ text: watch('firstName') || '-', alignment: AlignmentType.RIGHT })],
-                    width: { size: 50, type: WidthType.PERCENTAGE }
-                  })
-                ]
-              }),
-              new TableRow({
-                children: [
-                  new TableCell({
-                    children: [new Paragraph({ text: "نام خانوادگی", alignment: AlignmentType.RIGHT })],
-                    width: { size: 50, type: WidthType.PERCENTAGE }
-                  }),
-                  new TableCell({
-                    children: [new Paragraph({ text: watch('lastName') || '-', alignment: AlignmentType.RIGHT })],
-                    width: { size: 50, type: WidthType.PERCENTAGE }
-                  })
-                ]
-              }),
               new TableRow({
                 children: [
                   new TableCell({
@@ -520,14 +512,6 @@ const MissionOrderDetails = ({ missionOrderId }) => {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">نام</label>
-              <input {...register('firstName')} type="text" readOnly className="w-full px-2 sm:px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-sm sm:text-base"/>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">نام خانوادگی</label>
-              <input {...register('lastName')} type="text" readOnly className="w-full px-2 sm:px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-sm sm:text-base"/>
-            </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">کد پرسنلی</label>
               <input {...register('personnelNumber')} type="text" readOnly className="w-full px-2 sm:px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-sm sm:text-base"/>

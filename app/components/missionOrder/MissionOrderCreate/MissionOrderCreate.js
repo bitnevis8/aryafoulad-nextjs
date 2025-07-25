@@ -51,8 +51,6 @@ const MissionOrderCreate = () => {
   const router = useRouter();
   const { register, handleSubmit, setValue, watch, reset } = useForm({
     defaultValues: {
-      firstName: '',
-      lastName: '',
       personnelNumber: '',
       fromUnit: '',
       day: '',
@@ -126,25 +124,31 @@ const MissionOrderCreate = () => {
         // Get current date in YYYY-MM-DD format
         const today = new Date().toISOString().slice(0, 10);
         const response = await fetch(API_ENDPOINTS.rateSettings.getRateByDate(today));
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const data = await response.json();
-        if (data && data.data && data.data.ratePerKm) {
-          setDefaultRate(parseFloat(data.data.ratePerKm));
-          setSelectedRateInfo(data.data);
-          // نمایش اطلاعات نرخ انتخاب شده
-          console.log(`نرخ انتخاب شده: ${data.data.title} - ${data.data.ratePerKm} تومان`);
-          if (data.data.isDefaultRate) {
-            console.log('⚠️ نرخ پیش‌فرض اعمال شد');
+        
+        if (response.ok) {
+          const data = await response.json();
+          if (data && data.data && data.data.ratePerKm) {
+            setDefaultRate(parseFloat(data.data.ratePerKm));
+            setSelectedRateInfo(data.data);
+            // نمایش اطلاعات نرخ انتخاب شده
+            console.log(`نرخ انتخاب شده: ${data.data.title} - ${data.data.ratePerKm} تومان`);
+          } else {
+            console.warn('No valid rate found for current date, using default 0');
+            setDefaultRate(0);
+            setSelectedRateInfo(null);
           }
-        } else {
-          console.warn('No valid rate found for current date, using default 0');
+        } else if (response.status === 404) {
+          // اگر نرخ فعالی برای تاریخ امروز پیدا نشد
+          console.warn('No active rate found for current date, using default 0');
           setDefaultRate(0);
+          setSelectedRateInfo(null);
+        } else {
+          throw new Error(`HTTP error! status: ${response.status}`);
         }
       } catch (error) {
         console.error("Error fetching default rate:", error);
         setDefaultRate(0);
+        setSelectedRateInfo(null);
       } finally {
         setRateLoading(false);
       }
@@ -338,19 +342,31 @@ const MissionOrderCreate = () => {
               
               // نمایش اطلاعات نرخ انتخاب شده
               console.log(`نرخ انتخاب شده برای تاریخ ${formattedDate}: ${data.data.title} - ${data.data.ratePerKm} تومان`);
-              if (data.data.isDefaultRate) {
-                console.log('⚠️ نرخ پیش‌فرض اعمال شد');
-              }
               
               // Recalculate cost if we have a route
               if (route && route.forward) {
                 const finalCost = calculateFinalCost(getValues('totalDistance'), missionRate);
                 setValue('finalCost', finalCost);
               }
+            } else {
+              console.warn(`No valid rate found for date ${formattedDate}, using default 0`);
+              setDefaultRate(0);
+              setSelectedRateInfo(null);
             }
+          } else if (response.status === 404) {
+            // اگر نرخ فعالی برای تاریخ انتخاب شده پیدا نشد
+            console.warn(`No active rate found for date ${formattedDate}, using default 0`);
+            setDefaultRate(0);
+            setSelectedRateInfo(null);
+          } else {
+            console.error(`Error fetching rate for date ${formattedDate}:`, response.status);
+            setDefaultRate(0);
+            setSelectedRateInfo(null);
           }
         } catch (error) {
           console.error("Error fetching rate for mission date:", error);
+          setDefaultRate(0);
+          setSelectedRateInfo(null);
         }
       } catch (error) {
         console.error('Error converting date:', error);
@@ -549,24 +565,6 @@ const MissionOrderCreate = () => {
           {/* Other form fields */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">نام</label>
-              <input
-                {...register('firstName')}
-                type="text"
-                placeholder="نام مسئول ماموریت"
-                className="w-full px-2 sm:px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">نام خانوادگی</label>
-              <input
-                {...register('lastName')}
-                type="text"
-                placeholder="نام خانوادگی مسئول ماموریت"
-                className="w-full px-2 sm:px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
-              />
-            </div>
-            <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">کد پرسنلی</label>
               <input
                 {...register('personnelNumber')}
@@ -643,16 +641,16 @@ const MissionOrderCreate = () => {
                     <span className="text-blue-600">
                       {selectedRateInfo.ratePerKm.toLocaleString('fa-IR')} تومان
                     </span>
-                    {selectedRateInfo.isDefaultRate && (
-                      <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">
-                        پیش‌فرض
-                      </span>
-                    )}
                   </div>
                 ) : rateLoading ? (
                   <span className="text-gray-500">در حال بارگذاری...</span>
                 ) : (
-                  <span className="text-red-500">نرخ یافت نشد</span>
+                  <div className="flex items-center justify-between">
+                    <span className="text-red-500">نرخ فعال یافت نشد</span>
+                    <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">
+                      نیاز به تنظیم نرخ
+                    </span>
+                  </div>
                 )}
               </div>
             </div>

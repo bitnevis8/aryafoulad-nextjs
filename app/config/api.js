@@ -42,10 +42,13 @@ export const API_ENDPOINTS = {
   rateSettings: {
     base: `${API_BASE_URL}/aryafoulad/rate-settings`,
     getAll: `${API_BASE_URL}/aryafoulad/rate-settings/getAll`,
+    getInactive: `${API_BASE_URL}/aryafoulad/rate-settings/getInactive`,
     getActive: `${API_BASE_URL}/aryafoulad/rate-settings/getActive`,
+    getStatus: `${API_BASE_URL}/aryafoulad/rate-settings/getStatus`,
     getRateByDate: (missionDate) => `${API_BASE_URL}/aryafoulad/rate-settings/getRateByDate?missionDate=${missionDate}`,
     create: `${API_BASE_URL}/aryafoulad/rate-settings/create`,
     update: (id) => `${API_BASE_URL}/aryafoulad/rate-settings/update/${id}`,
+    toggleActive: (id) => `${API_BASE_URL}/aryafoulad/rate-settings/toggle-active/${id}`,
     delete: (id) => `${API_BASE_URL}/aryafoulad/rate-settings/delete/${id}`,
     getById: (id) => `${API_BASE_URL}/aryafoulad/rate-settings/${id}`,
   },
