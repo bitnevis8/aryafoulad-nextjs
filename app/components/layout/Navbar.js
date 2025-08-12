@@ -7,7 +7,7 @@ export default function Navbar() {
 
   return (
     <header className="fixed top-0 inset-x-0 z-50 bg-sky-950 border-b border-gray-800">
-      <div className="mx-auto px-4 sm:px-6 lg:px-8 py-3">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
         {/* We are in RTL globally; render buttons first so they sit on the visual right, and the brand second to sit on the visual left */}
         <div className="flex flex-row-reverse items-center justify-between">
           {/* Actions (visual right in RTL) */}

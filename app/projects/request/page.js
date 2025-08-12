@@ -68,8 +68,16 @@ export default function ProjectRequestPage() {
       credentials: "include"
     });
     const data = await res.json();
-    if (data.success) router.push("/dashboard/projects");
-    else alert(data.message || "خطا در ثبت");
+    if (data.success) {
+      alert("درخواست شما با موفقیت ثبت شد.");
+      // در همین صفحه بماند؛ در صورت نیاز فرم را ریست کن
+      setForm({ firstName: "", lastName: "", mobile: "", nationalId: "", companyName: "", project_type_id: "", request_payload: {} });
+      setCanProceedNew(false);
+      setExisting({ nationalId: '', mobile: '' });
+      setExistingResult(null);
+    } else {
+      alert(data.message || "خطا در ثبت");
+    }
   };
 
   if (loading) return <div className="p-6 animate-pulse text-gray-500">در حال بارگذاری...</div>;
