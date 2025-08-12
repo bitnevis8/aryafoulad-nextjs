@@ -113,4 +113,32 @@ export const API_ENDPOINTS = {
     approve: (id) => `${API_BASE_URL}/leave-request/approve/${id}`,
     report: `${API_BASE_URL}/leave-request/report`,
   },
+  projects: {
+    base: `${API_BASE_URL}/aryafoulad/projects`,
+    types: `${API_BASE_URL}/aryafoulad/projects/types/getAll`,
+    templates: (code) => `${API_BASE_URL}/aryafoulad/projects/forms/template/${code}`,
+    requests: {
+      getAll: `${API_BASE_URL}/aryafoulad/projects/requests/getAll`,
+      getOne: (id) => `${API_BASE_URL}/aryafoulad/projects/requests/getOne/${id}`,
+      create: `${API_BASE_URL}/aryafoulad/projects/requests/create`,
+      updateStatus: (id) => `${API_BASE_URL}/aryafoulad/projects/requests/status/${id}`
+    },
+    forms: {
+      submit: `${API_BASE_URL}/aryafoulad/projects/forms/submit`,
+      submission: (id) => `${API_BASE_URL}/aryafoulad/projects/forms/submission/${id}`,
+      byProject: (projectId) => `${API_BASE_URL}/aryafoulad/projects/forms/by-project/${projectId}`
+    },
+    costs: {
+      create: `${API_BASE_URL}/aryafoulad/projects/costs/create`,
+      delete: (id) => `${API_BASE_URL}/aryafoulad/projects/costs/delete/${id}`
+    },
+    payments: {
+      create: `${API_BASE_URL}/aryafoulad/projects/payments/create`,
+      delete: (id) => `${API_BASE_URL}/aryafoulad/projects/payments/delete/${id}`
+    },
+    inspections: {
+      create: `${API_BASE_URL}/aryafoulad/projects/inspections/create`,
+      calendar: `${API_BASE_URL}/aryafoulad/projects/inspections/calendar`
+    }
+  }
 }; 

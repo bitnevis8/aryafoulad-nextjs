@@ -26,13 +26,14 @@ const Popup = dynamic(
 const ChangeView = dynamic(
   () => import('react-leaflet').then((mod) => {
     const { useMap } = mod;
-    return function ChangeView({ center, zoom }) {
+    return function ChangeView({ center }) {
       const map = useMap();
       useEffect(() => {
-        if (map) {
-          map.setView(center, zoom);
+        if (map && center) {
+          // حفظ سطح زوم کاربر هنگام جابجایی مرکز
+          map.panTo(center);
         }
-      }, [center, zoom, map]);
+      }, [center, map]);
       return null;
     };
   }),
@@ -101,7 +102,7 @@ const Map = ({
         zoomControl={showControls}
         attributionControl={showControls}
       >
-        <ChangeView center={center} zoom={zoom} />
+        <ChangeView center={center} />
         <MapEvents onMapClick={handleMapClick} />
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'

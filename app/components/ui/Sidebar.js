@@ -42,6 +42,14 @@ const menuItems = [
     ],
   },
   {
+    title: 'مدیریت پروژه‌ها',
+    icon: '📁',
+    submenu: [
+      { title: 'درخواست‌های بازرسی', path: '/dashboard/projects', icon: '📝' },
+      { title: 'تقویم بازرسی', path: '/dashboard/projects/calendar', icon: '🗓️' },
+    ],
+  },
+  {
     title: 'مدیریت تجهیزات',
     icon: <WarehouseIcon className="w-5 h-5" />,
     submenu: [
