@@ -1,11 +1,9 @@
 import { Vazirmatn } from "next/font/google";
 import "./globals.css";
 import Footer from "./components/ui/Footer/Footer";
-import Link from "next/link";
 import { AuthProvider } from "./context/AuthContext";
-import AuthButtons from "./components/AuthButtons";
-import Navbar from "./components/layout/Navbar";
 import DateBar from "./components/DateBar";
+import Navbar from "./components/layout/Navbar";
 
 const vazirmatn = Vazirmatn({ 
   subsets: ["arabic"],
@@ -23,8 +21,8 @@ export default function RootLayout({ children }) {
     <html lang="fa" dir="rtl" className={vazirmatn.variable}>
       <body className={`${vazirmatn.className} min-h-screen flex flex-col`}>
         <AuthProvider>
-         
-          {/* حذف هدر بالایی */}
+          <Navbar />
+          <div className="h-14 bg-sky-900" />
           <DateBar />
           <div className="min-h-screen w-full">
             {children}
