@@ -21,8 +21,8 @@ export default function RootLayout({ children }) {
     <html lang="fa" dir="rtl" className={vazirmatn.variable}>
       <body className={`${vazirmatn.className} min-h-screen flex flex-col`}>
         <AuthProvider>
+         
           <Navbar />
-          <div className="h-14 bg-sky-900" />
           <DateBar />
           <div className="min-h-screen w-full">
             {children}

@@ -23,6 +23,7 @@ const menuItems = [
     submenu: [
       { title: 'لیست ماموریت‌ها', path: '/dashboard/missionOrder', icon: '📋' },
       { title: 'ایجاد ماموریت جدید', path: '/dashboard/missionOrder/create', icon: '✏️' },
+      { title: 'ابلاغ ماموریت جدید', path: '/dashboard/missionOrder/project', icon: '🧩' },
     ],
   },
   {
@@ -47,6 +48,14 @@ const menuItems = [
     submenu: [
       { title: 'درخواست‌های بازرسی', path: '/dashboard/projects', icon: '📝' },
       { title: 'تقویم بازرسی', path: '/dashboard/projects/calendar', icon: '🗓️' },
+    ],
+  },
+  {
+    title: 'مشتری‌ها',
+    icon: '🧾',
+    submenu: [
+      { title: 'لیست مشتری‌ها', path: '/dashboard/customers', icon: '📋' },
+      { title: 'افزودن مشتری', path: '/dashboard/customers/create', icon: '➕' },
     ],
   },
   {

@@ -14,7 +14,7 @@ export default function AuthButtons() {
       <div className="relative">
         <button
           onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-          className="flex items-center space-x-1 text-white hover:text-gray-200 font-semibold py-2.5 px-4 rounded-lg text-sm sm:text-base transition-all duration-300 bg-gray-700 hover:bg-gray-600 shadow-md hover:shadow-lg transform hover:scale-105"
+          className="flex items-center space-x-1 text-white hover:text-gray-200 font-semibold py-2.5 px-4 rounded-lg text-sm sm:text-base transition-all duration-300  hover:bg-gray-600 shadow-md hover:shadow-lg transform hover:scale-105"
         >
           <div className="w-7 h-7 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-md">
             {user.firstName ? user.firstName.charAt(0) : user.email.charAt(0).toUpperCase()}

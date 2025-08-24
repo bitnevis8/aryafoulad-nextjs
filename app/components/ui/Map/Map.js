@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 import 'leaflet/dist/leaflet.css';
+import SearchBox from './SearchBox';
 
 // Dynamic imports for Leaflet components
 const MapContainer = dynamic(
@@ -58,19 +59,36 @@ const MapEvents = dynamic(
   { ssr: false }
 );
 
+const DEFAULT_CENTER = [35.7219, 51.3347];
+
 const Map = ({
-  center = [35.7219, 51.3347], // تهران به عنوان مرکز پیش‌فرض
+  center, // اگر پاس داده نشود، از DEFAULT_CENTER استفاده می‌کنیم
   zoom = 13,
   markers = [],
   onMarkerClick,
   onMapClick,
+  onLocationSelect,
   height = '400px',
   width = '100%',
   className = '',
   showControls = true,
   draggable = true,
+  showSearch = false,
+  allowSelect = true,
 }) => {
   const [selectedPosition, setSelectedPosition] = useState(null);
+  const [mapCenter, setMapCenter] = useState(Array.isArray(center) ? center : DEFAULT_CENTER);
+
+  useEffect(() => {
+    // همگام‌سازی مرکز داخلی با prop در صورت تغییر بیرونی
+    if (Array.isArray(center)) {
+      const [lat, lng] = center;
+      const [clat, clng] = mapCenter || [];
+      if (lat !== clat || lng !== clng) {
+        setMapCenter(center);
+      }
+    }
+  }, [center]);
 
   useEffect(() => {
     // رفع مشکل آیکون‌های پیش‌فرض Leaflet
@@ -84,30 +102,44 @@ const Map = ({
   }, []);
 
   const handleMapClick = ({ latitude, longitude }) => {
+    if (!allowSelect) return;
     setSelectedPosition([latitude, longitude]);
-    if (onMapClick) {
-      onMapClick({ latitude, longitude });
+    setMapCenter([latitude, longitude]);
+    onMapClick?.({ latitude, longitude });
+    onLocationSelect?.({ latitude, longitude });
+  };
+
+  const handleSearchSelect = (coords) => {
+    // coords may be [lat, lon]
+    const latitude = Array.isArray(coords) ? coords[0] : coords.latitude;
+    const longitude = Array.isArray(coords) ? coords[1] : coords.longitude;
+    if (typeof latitude === 'number' && typeof longitude === 'number') {
+      setSelectedPosition([latitude, longitude]);
+      setMapCenter([latitude, longitude]);
+      onLocationSelect?.({ latitude, longitude });
+      onMapClick?.({ latitude, longitude });
     }
   };
 
   return (
     <div 
       style={{ height, width }} 
-      className={`rounded-lg overflow-hidden ${className}`}
+      className={`rounded-lg overflow-hidden relative ${className}`}
     >
       <MapContainer
-        center={center}
+        center={mapCenter}
         zoom={zoom}
         style={{ height: '100%', width: '100%' }}
         zoomControl={showControls}
         attributionControl={showControls}
       >
-        <ChangeView center={center} />
-        <MapEvents onMapClick={handleMapClick} />
+        <ChangeView center={mapCenter} />
+        {allowSelect && <MapEvents onMapClick={handleMapClick} />}
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
+        
         
         {/* نمایش نشانگرهای موجود */}
         {markers.map((marker, index) => (
@@ -125,7 +157,7 @@ const Map = ({
         ))}
         
         {/* نمایش موقعیت انتخاب شده */}
-        {selectedPosition && (
+        {allowSelect && selectedPosition && (
           <Marker position={selectedPosition}>
             <Popup>
               موقعیت انتخاب شده
@@ -133,6 +165,11 @@ const Map = ({
           </Marker>
         )}
       </MapContainer>
+      {showSearch && (
+        <div className="absolute z-[1000] top-2 right-2 w-72 max-w-full pointer-events-auto">
+          <SearchBox onSearchSelect={handleSearchSelect} />
+        </div>
+      )}
     </div>
   );
 };
