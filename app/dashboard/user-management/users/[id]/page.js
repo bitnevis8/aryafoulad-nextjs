@@ -19,7 +19,9 @@ export default function EditUser({ params }) {
     username: "",
     password: "",
     roleIds: [],
+    type: "person"
   });
+  const [companies, setCompanies] = useState([]);
 
   useEffect(() => {
     // دریافت اطلاعات کاربر و لیست نقش‌ها
@@ -52,9 +54,21 @@ export default function EditUser({ params }) {
           setFormData({
             ...sanitizedUserInfo,
             roleIds: userData.data.roles ? userData.data.roles.map(role => role.id) : [],
+            type: userData.data.type || "person"
           });
         } else {
           throw new Error(userData.message || "خطا در دریافت اطلاعات کاربر");
+        }
+        
+        // بارگذاری شرکت‌ها/شعبه‌ها
+        try {
+          const companiesResponse = await fetch(API_ENDPOINTS.customerCompanies.getByCustomerId(userId));
+          const companiesData = await companiesResponse.json();
+          if (companiesData.success) {
+            setCompanies(companiesData.data || []);
+          }
+        } catch (err) {
+          console.error("Error fetching companies:", err);
         }
 
         if (rolesData.success) {
@@ -294,6 +308,46 @@ export default function EditUser({ params }) {
             </button>
           </div>
         </form>
+
+        {/* نمایش شرکت‌ها/شعبه‌ها */}
+        <div className="mt-8 border-t pt-8">
+          <h3 className="text-lg font-semibold text-gray-800 mb-4">
+            {formData.type === 'company' ? 'شعبه‌های مشتری حقوقی' : 'شرکت‌های مشتری حقیقی'}
+          </h3>
+          
+          {companies.length > 0 ? (
+            <div className="space-y-3">
+              {companies.map((entity, index) => (
+                <div key={entity.id} className="bg-white border border-gray-200 rounded-lg p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <h5 className="font-medium text-gray-800">{entity.companyName}</h5>
+                      <p className="text-sm text-gray-600">
+                        {entity.registrationNumber && `شماره ثبت: ${entity.registrationNumber}`}
+                        {entity.nationalId && ` | شناسه ملی: ${entity.nationalId}`}
+                        {entity.entityType === 'branch' && ' | نوع: شعبه'}
+                      </p>
+                      {entity.latitude && entity.longitude && (
+                        <p className="text-xs text-green-600 mt-1">
+                          📍 موقعیت: {entity.latitude.toFixed(6)}, {entity.longitude.toFixed(6)}
+                        </p>
+                      )}
+                      {entity.address && (
+                        <p className="text-xs text-gray-500 mt-1">
+                          📍 آدرس: {entity.address}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-gray-500">
+              <p>هیچ {formData.type === 'company' ? 'شعبه' : 'شرکت'}‌ای ثبت نشده است.</p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

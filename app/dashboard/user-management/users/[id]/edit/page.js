@@ -3,6 +3,8 @@
 import React, { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { API_ENDPOINTS } from "@/app/config/api";
+import dynamic from "next/dynamic";
+const Map = dynamic(() => import("@/app/components/ui/Map/Map"), { ssr: false });
 
 const EditUserPage = () => {
   const router = useRouter();
@@ -19,10 +21,30 @@ const EditUserPage = () => {
     phone: "",
     businessName: "",
     businessContactInfo: "",
-    roleIds: []
+    roleIds: [],
+    type: "person"
   });
   const [roles, setRoles] = useState([]);
   const [submitting, setSubmitting] = useState(false);
+  
+  // مدیریت شرکت‌ها/شعبه‌ها
+  const [companies, setCompanies] = useState([]);
+  const [showCompanyForm, setShowCompanyForm] = useState(false);
+  const [editingCompany, setEditingCompany] = useState(null);
+  const [entityForm, setEntityForm] = useState({
+    companyName: "",
+    entityType: "company",
+    companyType: "other",
+    registrationNumber: "",
+    nationalId: "",
+    economicCode: "",
+    phone: "",
+    email: "",
+    address: "",
+    latitude: null,
+    longitude: null,
+    description: ""
+  });
 
   useEffect(() => {
     const fetchData = async () => {
@@ -41,9 +63,21 @@ const EditUserPage = () => {
             businessName: userData.data.businessName || "",
             businessContactInfo: userData.data.businessContactInfo || "",
             roleIds: userData.data.roles ? userData.data.roles.map(role => role.id) : [],
+            type: userData.data.type || "person"
           });
         } else {
           setError(userData.message || "خطا در دریافت اطلاعات کاربر");
+        }
+        
+        // بارگذاری شرکت‌ها/شعبه‌ها
+        try {
+          const companiesResponse = await fetch(API_ENDPOINTS.customerCompanies.getByCustomerId(id));
+          const companiesData = await companiesResponse.json();
+          if (companiesData.success) {
+            setCompanies(companiesData.data || []);
+          }
+        } catch (err) {
+          console.error("Error fetching companies:", err);
         }
       } catch (err) {
         setError(err.message || "خطا در ارتباط با سرور هنگام دریافت کاربر");
@@ -116,6 +150,130 @@ const EditUserPage = () => {
     }
   };
 
+  // تنظیم entityType بر اساس نوع مشتری
+  useEffect(() => {
+    setEntityForm(prev => ({
+      ...prev,
+      entityType: formData.type === 'company' ? 'branch' : 'company'
+    }));
+  }, [formData.type]);
+
+  const addEntity = async () => {
+    if (!entityForm.companyName) {
+      const entityTypeText = formData.type === 'company' ? 'شعبه' : 'شرکت';
+      alert(`لطفاً نام ${entityTypeText} را وارد کنید`);
+      return;
+    }
+    
+    try {
+      const response = await fetch(API_ENDPOINTS.customerCompanies.create, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          customerId: id,
+          ...entityForm
+        })
+      });
+      
+      const data = await response.json();
+      if (data.success) {
+        setCompanies(prev => [...prev, data.data]);
+        resetEntityForm();
+        setShowCompanyForm(false);
+      } else {
+        alert(data.message || 'خطا در ایجاد شرکت/شعبه');
+      }
+    } catch (err) {
+      alert('خطا در ایجاد شرکت/شعبه');
+    }
+  };
+
+  const editEntity = (company) => {
+    setEditingCompany(company);
+    setEntityForm({
+      companyName: company.companyName,
+      entityType: company.entityType,
+      companyType: company.companyType,
+      registrationNumber: company.registrationNumber,
+      nationalId: company.nationalId,
+      economicCode: company.economicCode,
+      phone: company.phone,
+      email: company.email,
+      address: company.address,
+      latitude: company.latitude,
+      longitude: company.longitude,
+      description: company.description
+    });
+    setShowCompanyForm(true);
+  };
+
+  const updateEntity = async () => {
+    if (!entityForm.companyName) {
+      const entityTypeText = formData.type === 'company' ? 'شعبه' : 'شرکت';
+      alert(`لطفاً نام ${entityTypeText} را وارد کنید`);
+      return;
+    }
+    
+    try {
+      const response = await fetch(API_ENDPOINTS.customerCompanies.update(editingCompany.id), {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(entityForm)
+      });
+      
+      const data = await response.json();
+      if (data.success) {
+        setCompanies(prev => prev.map(c => c.id === editingCompany.id ? data.data : c));
+        resetEntityForm();
+        setShowCompanyForm(false);
+        setEditingCompany(null);
+      } else {
+        alert(data.message || 'خطا در به‌روزرسانی شرکت/شعبه');
+      }
+    } catch (err) {
+      alert('خطا در به‌روزرسانی شرکت/شعبه');
+    }
+  };
+
+  const deleteEntity = async (companyId) => {
+    if (!confirm('آیا از حذف این شرکت/شعبه اطمینان دارید؟')) return;
+    
+    try {
+      const response = await fetch(API_ENDPOINTS.customerCompanies.delete(companyId), {
+        method: "DELETE",
+        credentials: "include"
+      });
+      
+      const data = await response.json();
+      if (data.success) {
+        setCompanies(prev => prev.filter(c => c.id !== companyId));
+      } else {
+        alert(data.message || 'خطا در حذف شرکت/شعبه');
+      }
+    } catch (err) {
+      alert('خطا در حذف شرکت/شعبه');
+    }
+  };
+
+  const resetEntityForm = () => {
+    setEntityForm({
+      companyName: "",
+      entityType: formData.type === 'company' ? 'branch' : 'company',
+      companyType: "other",
+      registrationNumber: "",
+      nationalId: "",
+      economicCode: "",
+      phone: "",
+      email: "",
+      address: "",
+      latitude: null,
+      longitude: null,
+      description: ""
+    });
+  };
+
   return (
     <div className="p-4 md:p-6 bg-gray-100 min-h-screen">
       <div className="max-w-4xl mx-auto bg-white shadow-lg rounded-lg p-4 md:p-6">
@@ -155,6 +313,19 @@ const EditUserPage = () => {
                   className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                   required
                 />
+              </div>
+              <div>
+                <label htmlFor="type" className="block text-sm font-medium text-gray-700 mb-1">نوع مشتری:</label>
+                <select
+                  id="type"
+                  name="type"
+                  value={formData.type}
+                  onChange={handleChange}
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                >
+                  <option value="person">حقیقی</option>
+                  <option value="company">حقوقی</option>
+                </select>
               </div>
               <div>
                 <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">نام کاربری:</label>
@@ -261,6 +432,219 @@ const EditUserPage = () => {
               </button>
             </div>
           </form>
+        )}
+
+        {/* مدیریت شرکت‌ها/شعبه‌ها */}
+        {!loadingUser && !error && (
+          <div className="mt-8 border-t pt-8">
+            <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-sm text-blue-800">
+                💡 <strong>راهنما:</strong> 
+                {formData.type === 'company' 
+                  ? ' مشتری حقوقی می‌تواند چندین شعبه داشته باشد. هر شعبه لوکیشن مخصوص خودش را دارد که باید روی نقشه مشخص شود.'
+                  : ' مشتری حقیقی می‌تواند چندین شرکت داشته باشد. هر شرکت لوکیشن مخصوص خودش را دارد که باید روی نقشه مشخص شود.'
+                }
+              </p>
+            </div>
+            
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-800">
+                {formData.type === 'company' ? 'شعبه‌های مشتری حقوقی' : 'شرکت‌های مشتری حقیقی'}
+              </h3>
+              <button
+                type="button"
+                onClick={() => {
+                  setEditingCompany(null);
+                  resetEntityForm();
+                  setShowCompanyForm(!showCompanyForm);
+                }}
+                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+              >
+                {showCompanyForm ? 'لغو' : (formData.type === 'company' ? 'افزودن شعبه' : 'افزودن شرکت')}
+              </button>
+            </div>
+
+            {/* فرم افزودن/ویرایش شرکت/شعبه */}
+            {showCompanyForm && (
+              <div className="bg-gray-50 rounded-lg p-4 mb-4">
+                <h4 className="text-md font-medium text-gray-700 mb-4">
+                  {editingCompany 
+                    ? `ویرایش ${formData.type === 'company' ? 'شعبه' : 'شرکت'}` 
+                    : `اطلاعات ${formData.type === 'company' ? 'شعبه جدید (مشتری حقوقی)' : 'شرکت جدید (مشتری حقیقی)'}`
+                  }
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block mb-2 text-sm font-medium text-gray-700">
+                      نام {formData.type === 'company' ? 'شعبه' : 'شرکت'} *
+                    </label>
+                    <input
+                      value={entityForm.companyName}
+                      onChange={e => setEntityForm(f => ({ ...f, companyName: e.target.value }))}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                      placeholder={formData.type === 'company' ? 'نام شعبه' : 'نام شرکت'}
+                    />
+                  </div>
+                  {formData.type === 'person' && (
+                    <div>
+                      <label className="block mb-2 text-sm font-medium text-gray-700">نوع شرکت</label>
+                      <select
+                        value={entityForm.companyType}
+                        onChange={e => setEntityForm(f => ({ ...f, companyType: e.target.value }))}
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                      >
+                        <option value="manufacturing">تولیدی</option>
+                        <option value="trading">بازرگانی</option>
+                        <option value="service">خدماتی</option>
+                        <option value="construction">ساختمانی</option>
+                        <option value="other">سایر</option>
+                      </select>
+                    </div>
+                  )}
+                  <div>
+                    <label className="block mb-2 text-sm font-medium text-gray-700">شماره ثبت</label>
+                    <input
+                      value={entityForm.registrationNumber}
+                      onChange={e => setEntityForm(f => ({ ...f, registrationNumber: e.target.value }))}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                      placeholder="شماره ثبت"
+                    />
+                  </div>
+                  <div>
+                    <label className="block mb-2 text-sm font-medium text-gray-700">شناسه ملی</label>
+                    <input
+                      value={entityForm.nationalId}
+                      onChange={e => setEntityForm(f => ({ ...f, nationalId: e.target.value }))}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                      placeholder="شناسه ملی"
+                    />
+                  </div>
+                  <div>
+                    <label className="block mb-2 text-sm font-medium text-gray-700">کد اقتصادی</label>
+                    <input
+                      value={entityForm.economicCode}
+                      onChange={e => setEntityForm(f => ({ ...f, economicCode: e.target.value }))}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                      placeholder="کد اقتصادی"
+                    />
+                  </div>
+                  <div>
+                    <label className="block mb-2 text-sm font-medium text-gray-700">تلفن</label>
+                    <input
+                      value={entityForm.phone}
+                      onChange={e => setEntityForm(f => ({ ...f, phone: e.target.value }))}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                      placeholder="تلفن"
+                    />
+                  </div>
+                  <div>
+                    <label className="block mb-2 text-sm font-medium text-gray-700">ایمیل</label>
+                    <input
+                      type="email"
+                      value={entityForm.email}
+                      onChange={e => setEntityForm(f => ({ ...f, email: e.target.value }))}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                      placeholder="ایمیل"
+                    />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className="block mb-2 text-sm font-medium text-gray-700">آدرس</label>
+                    <textarea
+                      value={entityForm.address}
+                      onChange={e => setEntityForm(f => ({ ...f, address: e.target.value }))}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                      placeholder={formData.type === 'company' ? 'آدرس شعبه' : 'آدرس شرکت'}
+                      rows="2"
+                    />
+                  </div>
+                </div>
+                
+                {/* نقشه برای شرکت/شعبه */}
+                <div className="mt-4">
+                  <label className="block mb-2 text-sm font-medium text-gray-700">
+                    موقعیت {formData.type === 'company' ? 'شعبه' : 'شرکت'} روی نقشه
+                  </label>
+                  <div className="h-64 sm:h-80 rounded-lg overflow-hidden border border-gray-300 relative">
+                    <Map 
+                      showSearch
+                      onLocationSelect={({ latitude, longitude }) => setEntityForm(f => ({ ...f, latitude, longitude }))}
+                      onMapClick={({ latitude, longitude }) => setEntityForm(f => ({ ...f, latitude, longitude }))}
+                      markers={entityForm.latitude && entityForm.longitude ? [{ 
+                        latitude: entityForm.latitude, 
+                        longitude: entityForm.longitude, 
+                        name: formData.type === 'company' ? 'موقعیت شعبه' : 'موقعیت شرکت'
+                      }] : []}
+                    />
+                  </div>
+                </div>
+                
+                <div className="flex justify-end gap-3 mt-4">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowCompanyForm(false);
+                      setEditingCompany(null);
+                      resetEntityForm();
+                    }}
+                    className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                  >
+                    لغو
+                  </button>
+                  <button
+                    type="button"
+                    onClick={editingCompany ? updateEntity : addEntity}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    {editingCompany ? 'به‌روزرسانی' : 'افزودن'} {formData.type === 'company' ? 'شعبه' : 'شرکت'}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* لیست شرکت‌ها/شعبه‌های موجود */}
+            {companies.length > 0 && (
+              <div className="space-y-3">
+                <h4 className="text-md font-medium text-gray-700">
+                  {formData.type === 'company' ? 'شعبه‌های موجود:' : 'شرکت‌های موجود:'}
+                </h4>
+                {companies.map((entity, index) => (
+                  <div key={entity.id} className="bg-white border border-gray-200 rounded-lg p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <h5 className="font-medium text-gray-800">{entity.companyName}</h5>
+                        <p className="text-sm text-gray-600">
+                          {entity.registrationNumber && `شماره ثبت: ${entity.registrationNumber}`}
+                          {entity.nationalId && ` | شناسه ملی: ${entity.nationalId}`}
+                          {entity.entityType === 'branch' && ' | نوع: شعبه'}
+                        </p>
+                        {entity.latitude && entity.longitude && (
+                          <p className="text-xs text-green-600 mt-1">
+                            📍 موقعیت: {entity.latitude.toFixed(6)}, {entity.longitude.toFixed(6)}
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => editEntity(entity)}
+                          className="px-3 py-1 text-blue-600 hover:text-blue-800 transition-colors text-sm"
+                        >
+                          ویرایش
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => deleteEntity(entity.id)}
+                          className="px-3 py-1 text-red-600 hover:text-red-800 transition-colors text-sm"
+                        >
+                          حذف
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         )}
       </div>
     </div>

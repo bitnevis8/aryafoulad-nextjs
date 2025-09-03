@@ -18,11 +18,11 @@ const menuItems = [
     icon: '🏠',
   },
   {
-    title: 'ابلاغ ماموریت',
+    title: 'مدیریت ماموریت‌ها',
     icon: '🚗',
     submenu: [
       { title: 'لیست ماموریت‌ها', path: '/dashboard/missionOrder', icon: '📋' },
-      { title: 'ایجاد ماموریت جدید', path: '/dashboard/missionOrder/create', icon: '✏️' },
+      { title: 'ماموریت شهری', path: '/dashboard/missionOrder/create', icon: '✏️' },
       { title: 'ابلاغ ماموریت جدید', path: '/dashboard/missionOrder/project', icon: '🧩' },
     ],
   },
@@ -43,10 +43,11 @@ const menuItems = [
     ],
   },
   {
-    title: 'مدیریت پروژه‌ها',
+    title: 'بازرسی‌ها',
     icon: '📁',
     submenu: [
-      { title: 'درخواست‌های بازرسی', path: '/dashboard/projects', icon: '📝' },
+      { title: 'مدیریت بازرسی‌ها', path: '/dashboard/projects', icon: '📝' },
+      { title: 'درخواست‌های بازرسی', path: '/dashboard/inspection-requests', icon: '📋' },
     ],
   },
   {

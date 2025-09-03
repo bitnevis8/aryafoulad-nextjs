@@ -31,6 +31,23 @@ export const API_ENDPOINTS = {
     update: (id) => `${API_BASE_URL}/user/role/update/${id}`,
     delete: (id) => `${API_BASE_URL}/user/role/delete/${id}`,
   },
+  customerCompanies: {
+    base: `${API_BASE_URL}/customer-company`,
+    getAll: `${API_BASE_URL}/customer-company/getAll`,
+    getById: (id) => `${API_BASE_URL}/customer-company/${id}`,
+    getByCustomerId: (customerId) => `${API_BASE_URL}/customer-company/customer/${customerId}`,
+    create: `${API_BASE_URL}/customer-company/create`,
+    update: (id) => `${API_BASE_URL}/customer-company/update/${id}`,
+    delete: (id) => `${API_BASE_URL}/customer-company/delete/${id}`,
+  },
+  inspectionRequests: {
+    base: `${API_BASE_URL}/inspection-request`,
+    getAll: `${API_BASE_URL}/inspection-request/getAll`,
+    getById: (id) => `${API_BASE_URL}/inspection-request/getOne/${id}`,
+    create: `${API_BASE_URL}/inspection-request/create`,
+    updateStatus: (id) => `${API_BASE_URL}/inspection-request/updateStatus/${id}`,
+    delete: (id) => `${API_BASE_URL}/inspection-request/delete/${id}`,
+  },
   missionOrders: {
     base: `${API_BASE_URL}/aryafoulad/mission-orders`,
     getAll: `${API_BASE_URL}/aryafoulad/mission-orders/getAll`,
