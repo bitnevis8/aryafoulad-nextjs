@@ -11,6 +11,7 @@ export default function RateSettingsCreate() {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [description, setDescription] = useState('');
+  const [isActive, setIsActive] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -36,7 +37,8 @@ export default function RateSettingsCreate() {
           ratePerKm: parseFloat(ratePerKm), 
           startDate: start && start.toDate ? start.toDate().toISOString().slice(0, 10) : start.toISOString().slice(0, 10),
           endDate: end ? (end.toDate ? end.toDate().toISOString().slice(0, 10) : end.toISOString().slice(0, 10)) : null,
-          description 
+          description,
+          isActive
         }),
       });
       
@@ -51,6 +53,7 @@ export default function RateSettingsCreate() {
       setStartDate('');
       setEndDate('');
       setDescription('');
+      setIsActive(true);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -121,6 +124,19 @@ export default function RateSettingsCreate() {
             rows="3"
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
+        </div>
+
+        <div>
+          <label className="flex items-center">
+            <input
+              type="checkbox"
+              checked={isActive}
+              onChange={(e) => setIsActive(e.target.checked)}
+              className="mr-2 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+            />
+            <span className="text-gray-700 font-medium">نرخ فعال</span>
+          </label>
+          <p className="text-sm text-gray-500 mt-1">اگر فعال باشد، این نرخ برای محاسبات استفاده می‌شود</p>
         </div>
 
         {error && (
