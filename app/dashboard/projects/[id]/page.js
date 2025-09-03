@@ -1,12 +1,11 @@
 "use client";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState, use } from "react";
 import Link from "next/link";
 import Button from "@/app/components/ui/Button";
-
-import React from "react";
+import PersianDatePicker from '@/app/components/ui/PersianDatePicker';
 
 export default function ProjectDetailsPage({ params }) {
-  const { id } = React.use(params);
+  const { id } = use(params);
   const [project, setProject] = useState(null);
   const [subs, setSubs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -45,7 +44,7 @@ export default function ProjectDetailsPage({ params }) {
   if (!project) return <div className="p-6">یافت نشد</div>;
 
   return (
-    <div className="max-w-6xl mx-auto p-6 space-y-6">
+    <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">پروژه #{project.id} - {project.type?.name}</h1>
         <Link href={`/dashboard/projects/${id}/report/new`}><Button>ثبت گزارش جدید</Button></Link>
@@ -133,7 +132,12 @@ export default function ProjectDetailsPage({ params }) {
             <input className="border rounded px-3 py-2" placeholder="نام پرداخت‌کننده" value={payPayer} onChange={e=>setPayPayer(e.target.value)} />
             <input className="border rounded px-3 py-2" placeholder="مبلغ" value={payAmount} onChange={e=>setPayAmount(e.target.value)} />
             <input className="border rounded px-3 py-2" placeholder="شماره فاکتور" value={payInvoice} onChange={e=>setPayInvoice(e.target.value)} />
-            <input type="date" className="border rounded px-3 py-2" placeholder="تاریخ" value={payDate} onChange={e=>setPayDate(e.target.value)} />
+            <PersianDatePicker
+              value={payDate}
+              onChange={setPayDate}
+              placeholder="تاریخ پرداخت"
+              inputClass="border rounded px-3 py-2"
+            />
             <input className="md:col-span-2 border rounded px-3 py-2" placeholder="توضیحات" value={payDesc} onChange={e=>setPayDesc(e.target.value)} />
           </div>
           <div className="flex justify-end mt-2"><Button onClick={async()=>{

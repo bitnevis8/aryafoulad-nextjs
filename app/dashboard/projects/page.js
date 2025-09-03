@@ -99,8 +99,11 @@ export default function DashboardProjectsPage() {
                 </td>
                 <td className="p-3">{new Date(p.createdAt).toLocaleDateString('fa-IR')}</td>
                 <td className="p-3">
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <a href={`/dashboard/projects/${p.id}`}><Button variant="outline" size="sm">جزئیات</Button></a>
+                    <a href={`/dashboard/projects/${p.id}/costs`}><Button variant="outline" size="sm" className="bg-green-50 text-green-700 border-green-200">هزینه‌ها</Button></a>
+                    <a href={`/dashboard/projects/${p.id}/payments`}><Button variant="outline" size="sm" className="bg-blue-50 text-blue-700 border-blue-200">پرداختی‌ها</Button></a>
+                    <a href={`/dashboard/projects/${p.id}/reports`}><Button variant="outline" size="sm" className="bg-purple-50 text-purple-700 border-purple-200">گزارش‌ها</Button></a>
                     <select disabled={statusUpdating===p.id} className="border rounded-lg px-2 py-1 focus:ring-2 focus:ring-blue-500 min-w-40"
                           value={p.status}
                           onChange={(e)=>updateStatus(p.id, e.target.value)}>

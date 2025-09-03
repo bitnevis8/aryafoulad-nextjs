@@ -36,21 +36,21 @@ export default function ReportRenderer({ template, value, onChange }) {
   }, []);
 
   const labelFa = {
-    client: "مشتری",
-    project: "پروژه",
-    contractNo: "شماره قرارداد",
-    reportNo: "شماره گزارش",
-    testDate: "تاریخ آزمون",
-    location: "محل",
-    standard: "استاندارد",
-    specimenData: "نمونه آزمون",
-    testingTemp: "دمای آزمون",
-    items: "اقلام",
-    reportingResults: "نتایج گزارش",
-    comment: "توضیحات",
-    testedBy: "اجرا توسط",
-    reviewedBy: "بازنگری توسط",
-    approvedBy: "تایید توسط",
+    client: "Client",
+    project: "Project",
+    contractNo: "Contract No",
+    reportNo: "Report No",
+    testDate: "Test Date",
+    location: "Location",
+    standard: "Standard",
+    specimenData: "Specimen Data",
+    testingTemp: "Testing Temperature",
+    items: "Items",
+    reportingResults: "Reporting Results",
+    comment: "Comment",
+    testedBy: "Tested By",
+    reviewedBy: "Reviewed By",
+    approvedBy: "Approved By",
   };
 
   return (
@@ -65,14 +65,14 @@ export default function ReportRenderer({ template, value, onChange }) {
         ))}
       </div>
       <section>
-        <h3 className="font-semibold mb-2">Specimen Data (داده نمونه)</h3>
+        <h3 className="font-semibold mb-2">Specimen Data</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm mb-1">location (محل)</label>
+            <label className="block text-sm mb-1">location</label>
             <input className="w-full border rounded px-3 py-2" value={data.specimenData?.location || ''} onChange={(e)=>update(['specimenData','location'], e.target.value)} />
           </div>
           <div>
-            <label className="block text-sm mb-1">testingTemp (دمای آزمون)</label>
+            <label className="block text-sm mb-1">testingTemp</label>
             <input className="w-full border rounded px-3 py-2" value={data.specimenData?.testingTemp || ''} onChange={(e)=>update(['specimenData','testingTemp'], e.target.value)} />
           </div>
         </div>
@@ -80,12 +80,12 @@ export default function ReportRenderer({ template, value, onChange }) {
           <table className="min-w-[900px] w-full text-sm table-fixed">
             <thead className="bg-gray-50">
               <tr>
-                <th className="p-2 text-right">itemName (ایتم)</th>
-                <th className="p-2 text-right">condition (شرایط)</th>
-                <th className="p-2 text-right">measurementRange (رنج اندازه‌گیری)</th>
-                <th className="p-2 text-right">acceptanceRange (حد پذیرش)</th>
-                <th className="p-2 text-right">result (نتیجه)</th>
-                <th className="p-2 text-right">remark (توضیح)</th>
+                <th className="p-2 text-right">itemName</th>
+                <th className="p-2 text-right">condition</th>
+                <th className="p-2 text-right">measurementRange</th>
+                <th className="p-2 text-right">acceptanceRange</th>
+                <th className="p-2 text-right">result</th>
+                <th className="p-2 text-right">remark</th>
               </tr>
             </thead>
             <tbody>
@@ -103,18 +103,18 @@ export default function ReportRenderer({ template, value, onChange }) {
         </div>
       </section>
       <section>
-        <h3 className="font-semibold mb-2">Reporting Results (نتایج گزارش)</h3>
+        <h3 className="font-semibold mb-2">Reporting Results</h3>
         <div className="overflow-x-auto">
           <table className="min-w-[900px] w-full text-sm table-fixed">
             <thead className="bg-gray-50">
               <tr>
-                <th className="p-2 text-right">no (ردیف)</th>
-                <th className="p-2 text-right">itemName (ایتم)</th>
-                <th className="p-2 text-right">condition (شرایط)</th>
-                <th className="p-2 text-right">measurementRange (رنج اندازه‌گیری)</th>
-                <th className="p-2 text-right">acceptanceRange (حد پذیرش)</th>
-                <th className="p-2 text-right">result (نتیجه)</th>
-                <th className="p-2 text-right">remark (توضیح)</th>
+                <th className="p-2 text-right">no</th>
+                <th className="p-2 text-right">itemName</th>
+                <th className="p-2 text-right">condition</th>
+                <th className="p-2 text-right">measurementRange</th>
+                <th className="p-2 text-right">acceptanceRange</th>
+                <th className="p-2 text-right">result</th>
+                <th className="p-2 text-right">remark</th>
               </tr>
             </thead>
             <tbody>
@@ -132,14 +132,14 @@ export default function ReportRenderer({ template, value, onChange }) {
         </div>
       </section>
       <section>
-        <h3 className="font-semibold mb-2">امضاء و تایید</h3>
+        <h3 className="font-semibold mb-2">Signature & Approval</h3>
         <div>
-          <label className="block text-sm mb-1">comment (توضیحات)</label>
+          <label className="block text-sm mb-1">comment</label>
           <input className="w-full border rounded px-3 py-2" value={data.comment || ''} onChange={(e)=>update(['comment'], e.target.value)} />
         </div>
-        <UserSelectField label="testedBy" fa="اجرا توسط" value={data.testedBy} onChange={(v)=>update(['testedBy'], v)} users={users} />
-        <UserSelectField label="reviewedBy" fa="بازنگری توسط" value={data.reviewedBy} onChange={(v)=>update(['reviewedBy'], v)} users={users} />
-        <UserSelectField label="approvedBy" fa="تایید توسط" value={data.approvedBy} onChange={(v)=>update(['approvedBy'], v)} users={users} />
+        <UserSelectField label="testedBy" fa="Tested By" value={data.testedBy} onChange={(v)=>update(['testedBy'], v)} users={users} />
+        <UserSelectField label="reviewedBy" fa="Reviewed By" value={data.reviewedBy} onChange={(v)=>update(['reviewedBy'], v)} users={users} />
+        <UserSelectField label="approvedBy" fa="Approved By" value={data.approvedBy} onChange={(v)=>update(['approvedBy'], v)} users={users} />
       </section>
     </div>
   );
@@ -157,7 +157,7 @@ function UserSelectField({ label, fa, value, onChange, users }) {
     <div>
       <label className="block text-sm mb-1">{label} ({fa})</label>
       <select className="w-full border rounded px-3 py-2" value={value || ''} onChange={(e)=>onChange?.(e.target.value)}>
-        <option value="">انتخاب کاربر</option>
+        <option value="">Select User</option>
         {safeUsers.map(u => (
           <option key={u.id} value={u.id}>{u.firstName ? `${u.firstName} ${u.lastName || ''}`.trim() : (u.username || u.email || u.mobile)}</option>
         ))}

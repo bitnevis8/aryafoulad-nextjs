@@ -1,13 +1,11 @@
 "use client";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState, use } from "react";
 import { useRouter } from "next/navigation";
 import Button from "@/app/components/ui/Button";
 import UserSelect from "@/app/components/projects/UserSelect";
 
-import React from "react";
-
 export default function NewReportPage({ params }) {
-  const { id } = React.use(params);
+  const { id } = use(params);
   const router = useRouter();
   const [template, setTemplate] = useState(null);
   const [payload, setPayload] = useState(null);
@@ -38,16 +36,16 @@ export default function NewReportPage({ params }) {
     else alert(data.message || 'خطا در ثبت گزارش');
   };
 
-  if (!template) return <div className="p-6 animate-pulse text-gray-500">در حال بارگذاری...</div>;
+  if (!template) return <div className="p-6 animate-pulse text-gray-500">Loading...</div>;
   const FormRenderer = require('@/app/components/projects/ReportRenderer').default;
   return (
     <div className="max-w-5xl mx-auto p-6 space-y-4">
-      <h1 className="text-2xl font-bold">ثبت گزارش جدید</h1>
+      <h1 className="text-2xl font-bold">New Report</h1>
       <div className="bg-white border rounded-xl p-6 shadow-sm">
         <AutoFilledReport template={template} project={project} onChange={setPayload} />
       </div>
       <div className="flex justify-end">
-        <Button onClick={submit}>ثبت گزارش</Button>
+        <Button onClick={submit}>Submit Report</Button>
       </div>
     </div>
   );

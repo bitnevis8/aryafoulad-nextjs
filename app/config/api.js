@@ -126,7 +126,8 @@ export const API_ENDPOINTS = {
     forms: {
       submit: `${API_BASE_URL}/aryafoulad/projects/forms/submit`,
       submission: (id) => `${API_BASE_URL}/aryafoulad/projects/forms/submission/${id}`,
-      byProject: (projectId) => `${API_BASE_URL}/aryafoulad/projects/forms/by-project/${projectId}`
+      byProject: (projectId) => `${API_BASE_URL}/aryafoulad/projects/forms/by-project/${projectId}`,
+      delete: (id) => `${API_BASE_URL}/aryafoulad/projects/forms/delete/${id}`
     },
     costs: {
       create: `${API_BASE_URL}/aryafoulad/projects/costs/create`,
@@ -136,9 +137,6 @@ export const API_ENDPOINTS = {
       create: `${API_BASE_URL}/aryafoulad/projects/payments/create`,
       delete: (id) => `${API_BASE_URL}/aryafoulad/projects/payments/delete/${id}`
     },
-    inspections: {
-      create: `${API_BASE_URL}/aryafoulad/projects/inspections/create`,
-      calendar: `${API_BASE_URL}/aryafoulad/projects/inspections/calendar`
-    }
+
   }
 }; 

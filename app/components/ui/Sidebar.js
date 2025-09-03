@@ -47,7 +47,6 @@ const menuItems = [
     icon: '📁',
     submenu: [
       { title: 'درخواست‌های بازرسی', path: '/dashboard/projects', icon: '📝' },
-      { title: 'تقویم بازرسی', path: '/dashboard/projects/calendar', icon: '🗓️' },
     ],
   },
   {

@@ -38,6 +38,28 @@ export default function RateSettingsList() {
     router.push('/dashboard/settings/rate-settings/create');
   };
 
+  const handleDelete = async (id) => {
+    if (!confirm('آیا از حذف این نرخ اطمینان دارید؟')) return;
+    
+    try {
+      const response = await fetch(`${API_ENDPOINTS.rateSettings.delete(id)}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'خطا در حذف نرخ');
+      }
+      
+      // به‌روزرسانی لیست
+      setRates(prev => prev.filter(rate => rate.id !== id));
+      alert('نرخ با موفقیت حذف شد');
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
   const formatPersianDate = (dateString) => {
     if (!dateString) return '-';
     try {
@@ -115,6 +137,7 @@ export default function RateSettingsList() {
             size="small"
             disabled={row.isActive}
             title={row.isActive ? 'نرخ فعال قابل حذف نیست' : 'حذف نرخ'}
+            onClick={() => handleDelete(row.id)}
           >
             حذف
           </Button>
