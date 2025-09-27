@@ -297,7 +297,9 @@ export default function DashboardProjectsPage() {
                     {p.source === 'inspection_request' ? (
                       <>
                         <Button variant="outline" size="sm" onClick={() => convertToProject(p.id)}>تبدیل به پروژه</Button>
-                        <Button variant="outline" size="sm" onClick={() => alert('جزئیات درخواست بازرسی')}>جزئیات</Button>
+                        <a href={`/dashboard/inspection-requests/${p.id}`}>
+                          <Button variant="outline" size="sm">جزئیات</Button>
+                        </a>
                         <select disabled={statusUpdating===p.id} className="border rounded-lg px-2 py-1 focus:ring-2 focus:ring-blue-500 min-w-40"
                               value={p.status}
                               onChange={(e)=>updateStatus(p.id, e.target.value, p.source)}>

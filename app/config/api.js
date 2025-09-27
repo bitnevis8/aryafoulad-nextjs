@@ -44,9 +44,11 @@ export const API_ENDPOINTS = {
     base: `${API_BASE_URL}/inspection-request`,
     getAll: `${API_BASE_URL}/inspection-request/getAll`,
     getById: (id) => `${API_BASE_URL}/inspection-request/getOne/${id}`,
+    get: (id) => `${API_BASE_URL}/inspection-request/get/${id}`,
     create: `${API_BASE_URL}/inspection-request/create`,
     updateStatus: (id) => `${API_BASE_URL}/inspection-request/updateStatus/${id}`,
     delete: (id) => `${API_BASE_URL}/inspection-request/delete/${id}`,
+    convertToProject: (id) => `${API_BASE_URL}/inspection-request/convertToProject/${id}`,
   },
   missionOrders: {
     base: `${API_BASE_URL}/aryafoulad/mission-orders`,
