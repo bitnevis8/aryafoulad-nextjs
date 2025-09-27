@@ -6,7 +6,18 @@ export default function DashboardProjectsPage() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [statusUpdating, setStatusUpdating] = useState(null);
-  const [filters, setFilters] = useState({ q: '', firstName: '', lastName: '', nationalId: '', mobile: '' });
+  const [filters, setFilters] = useState({ 
+    q: '', 
+    firstName: '', 
+    lastName: '', 
+    nationalId: '', 
+    mobile: '',
+    status: '',
+    projectType: '',
+    dateFrom: '',
+    dateTo: '',
+    source: ''
+  });
 
   const load = async () => {
     setLoading(true);
@@ -27,24 +38,31 @@ export default function DashboardProjectsPage() {
     let allItems = [];
     
     // اضافه کردن پروژه‌ها
-    if (projectsData.success) {
+    if (projectsData.success && (!filters.source || filters.source === 'project')) {
       const projectsList = Array.isArray(projectsData.data) ? projectsData.data : (Array.isArray(projectsData.data?.items) ? projectsData.data.items : []);
       allItems = [...projectsList.map(p => ({ ...p, source: 'project', uniqueId: `project_${p.id}` }))];
     }
     
-    // اضافه کردن درخواست‌های بازرسی
-    if (inspectionData.success) {
+    // اضافه کردن درخواست‌های بازرسی (فقط آنهایی که تبدیل نشده‌اند)
+    if (inspectionData.success && (!filters.source || filters.source === 'inspection_request')) {
       const inspectionList = Array.isArray(inspectionData.data) ? inspectionData.data : (Array.isArray(inspectionData.data?.requests) ? inspectionData.data.requests : []);
-      const inspectionItems = inspectionList.map(i => ({
-        id: i.id,
-        type: { name: i.projectType?.name || 'درخواست بازرسی' },
-        client_name: `${i.firstName} ${i.lastName}`,
-        status: i.status,
-        createdAt: i.createdAt,
-        source: 'inspection_request',
-        uniqueId: `inspection_${i.id}`
-      }));
+      const inspectionItems = inspectionList
+        .filter(i => !i.project_id) // فقط درخواست‌هایی که تبدیل نشده‌اند
+        .map(i => ({
+          id: i.id,
+          type: { name: i.projectType?.name || 'درخواست بازرسی' },
+          client_name: `${i.firstName} ${i.lastName}`,
+          status: i.status,
+          createdAt: i.createdAt,
+          source: 'inspection_request',
+          uniqueId: `inspection_${i.id}`
+        }));
       allItems = [...allItems, ...inspectionItems];
+    }
+    
+    // فیلتر وضعیت در frontend (اگر backend فیلتر نکرده باشد)
+    if (filters.status) {
+      allItems = allItems.filter(item => item.status === filters.status);
     }
     
     // مرتب‌سازی بر اساس تاریخ
@@ -109,20 +127,8 @@ export default function DashboardProjectsPage() {
       const data = await res.json();
       if (data.success) {
         alert('درخواست با موفقیت به پروژه تبدیل شد');
-        // حذف درخواست بازرسی از لیست و اضافه کردن پروژه جدید
-        setItems(prev => {
-          const filtered = prev.filter(p => p.uniqueId !== `inspection_${inspectionRequestId}`);
-          const newProject = {
-            id: data.data.project.id,
-            type: { name: data.data.project.type?.name || 'پروژه' },
-            client_name: data.data.project.client_name,
-            status: data.data.project.status,
-            createdAt: data.data.project.createdAt,
-            source: 'project',
-            uniqueId: `project_${data.data.project.id}`
-          };
-          return [...filtered, newProject].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-        });
+        // بارگذاری مجدد لیست برای نمایش به‌روز
+        load();
       } else {
         alert(data.message || 'خطا در تبدیل درخواست به پروژه');
       }
@@ -138,19 +144,122 @@ export default function DashboardProjectsPage() {
       <div className="flex items-center justify-between mb-4">
         <div>
           <h1 className="text-2xl font-bold">درخواست‌های پروژه</h1>
-          <p className="text-gray-600 text-sm mt-1">مدیریت درخواست‌ها و وضعیت پروژه‌ها</p>
+          <p className="text-gray-600 text-sm mt-1">
+            مدیریت درخواست‌ها و وضعیت پروژه‌ها 
+            {items.length > 0 && (
+              <span className="mr-2 text-blue-600 font-semibold">
+                ({items.length} مورد یافت شد)
+              </span>
+            )}
+          </p>
         </div>
         <a href="/projects/request"><Button variant="secondary">ثبت درخواست جدید</Button></a>
       </div>
       <div className="bg-white border rounded-xl shadow-sm p-4 mb-4">
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
-          <input className="border rounded px-3 py-2" placeholder="جست‌وجوی کلی" value={filters.q} onChange={e=>setFilters(f=>({...f, q: e.target.value}))} />
-          <input className="border rounded px-3 py-2" placeholder="نام" value={filters.firstName} onChange={e=>setFilters(f=>({...f, firstName: e.target.value}))} />
-          <input className="border rounded px-3 py-2" placeholder="نام خانوادگی" value={filters.lastName} onChange={e=>setFilters(f=>({...f, lastName: e.target.value}))} />
-          <input className="border rounded px-3 py-2" placeholder="کد ملی" value={filters.nationalId} onChange={e=>setFilters(f=>({...f, nationalId: e.target.value}))} />
-          <input className="border rounded px-3 py-2" placeholder="موبایل" value={filters.mobile} onChange={e=>setFilters(f=>({...f, mobile: e.target.value}))} />
+        <h3 className="text-lg font-semibold mb-4">فیلترها و جستجو</h3>
+        
+        {/* ردیف اول - جستجوی کلی */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+          <input 
+            className="border rounded px-3 py-2" 
+            placeholder="جست‌وجوی کلی" 
+            value={filters.q} 
+            onChange={e=>setFilters(f=>({...f, q: e.target.value}))} 
+          />
+          <select 
+            className="border rounded px-3 py-2" 
+            value={filters.source} 
+            onChange={e=>setFilters(f=>({...f, source: e.target.value}))}
+          >
+            <option value="">همه انواع</option>
+            <option value="project">پروژه</option>
+            <option value="inspection_request">درخواست بازرسی</option>
+          </select>
+          <select 
+            className="border rounded px-3 py-2" 
+            value={filters.status} 
+            onChange={e=>setFilters(f=>({...f, status: e.target.value}))}
+          >
+            <option value="">همه وضعیت‌ها</option>
+            <option value="pending">در انتظار بررسی</option>
+            <option value="reviewed">بررسی شده</option>
+            <option value="approved">تایید شده</option>
+            <option value="rejected">رد شده</option>
+            <option value="archived">آرشیو شده</option>
+            <option value="requested">درخواست شده</option>
+            <option value="quoted">اعلام هزینه</option>
+            <option value="scheduled">زمان‌بندی</option>
+            <option value="inspecting">در حال بازرسی</option>
+            <option value="reporting">ثبت گزارش</option>
+          </select>
         </div>
-        <div className="flex justify-end mt-3">
+
+        {/* ردیف دوم - اطلاعات شخصی */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">
+          <input 
+            className="border rounded px-3 py-2" 
+            placeholder="نام" 
+            value={filters.firstName} 
+            onChange={e=>setFilters(f=>({...f, firstName: e.target.value}))} 
+          />
+          <input 
+            className="border rounded px-3 py-2" 
+            placeholder="نام خانوادگی" 
+            value={filters.lastName} 
+            onChange={e=>setFilters(f=>({...f, lastName: e.target.value}))} 
+          />
+          <input 
+            className="border rounded px-3 py-2" 
+            placeholder="کد ملی" 
+            value={filters.nationalId} 
+            onChange={e=>setFilters(f=>({...f, nationalId: e.target.value}))} 
+          />
+          <input 
+            className="border rounded px-3 py-2" 
+            placeholder="موبایل" 
+            value={filters.mobile} 
+            onChange={e=>setFilters(f=>({...f, mobile: e.target.value}))} 
+          />
+        </div>
+
+        {/* ردیف سوم - تاریخ و نوع پروژه */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+          <input 
+            type="date" 
+            className="border rounded px-3 py-2" 
+            placeholder="از تاریخ" 
+            value={filters.dateFrom} 
+            onChange={e=>setFilters(f=>({...f, dateFrom: e.target.value}))} 
+          />
+          <input 
+            type="date" 
+            className="border rounded px-3 py-2" 
+            placeholder="تا تاریخ" 
+            value={filters.dateTo} 
+            onChange={e=>setFilters(f=>({...f, dateTo: e.target.value}))} 
+          />
+          <select 
+            className="border rounded px-3 py-2" 
+            value={filters.projectType} 
+            onChange={e=>setFilters(f=>({...f, projectType: e.target.value}))}
+          >
+            <option value="">همه انواع پروژه</option>
+            <option value="1">بازرسی جرثقیل</option>
+            <option value="2">تست جذب ضربه (HIC)</option>
+            <option value="3">تست لوله پلی‌اتیلن</option>
+            <option value="4">بازرسی ارت</option>
+          </select>
+        </div>
+
+        {/* دکمه‌های عملیات */}
+        <div className="flex justify-between items-center">
+          <Button 
+            variant="outline" 
+            onClick={() => setFilters({ q: '', firstName: '', lastName: '', nationalId: '', mobile: '', status: '', projectType: '', dateFrom: '', dateTo: '', source: '' })}
+            className="text-red-600 border-red-200 hover:bg-red-50"
+          >
+            پاک کردن فیلترها
+          </Button>
           <Button variant="outline" onClick={load}>جست‌وجو</Button>
         </div>
       </div>
