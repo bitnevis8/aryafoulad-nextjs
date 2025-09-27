@@ -12,18 +12,51 @@ export default function DashboardProjectsPage() {
     setLoading(true);
     const params = new URLSearchParams();
     Object.entries(filters).forEach(([k,v])=>{ if (v) params.set(k, v); });
-    const res = await fetch(`/api/projects/requests/getAll?${params.toString()}`, { credentials: 'include' });
-    const data = await res.json();
-    if (data.success) {
-      const list = Array.isArray(data.data) ? data.data : (Array.isArray(data.data?.items) ? data.data.items : []);
-      setItems(list);
+    
+    // دریافت هم پروژه‌ها و هم درخواست‌های بازرسی
+    const [projectsRes, inspectionRes] = await Promise.all([
+      fetch(`/api/projects/requests/getAll?${params.toString()}`, { credentials: 'include' }),
+      fetch(`/api/inspection-requests/getAll?${params.toString()}`, { credentials: 'include' })
+    ]);
+    
+    const [projectsData, inspectionData] = await Promise.all([
+      projectsRes.json(),
+      inspectionRes.json()
+    ]);
+    
+    let allItems = [];
+    
+    // اضافه کردن پروژه‌ها
+    if (projectsData.success) {
+      const projectsList = Array.isArray(projectsData.data) ? projectsData.data : (Array.isArray(projectsData.data?.items) ? projectsData.data.items : []);
+      allItems = [...projectsList.map(p => ({ ...p, source: 'project', uniqueId: `project_${p.id}` }))];
     }
+    
+    // اضافه کردن درخواست‌های بازرسی
+    if (inspectionData.success) {
+      const inspectionList = Array.isArray(inspectionData.data) ? inspectionData.data : (Array.isArray(inspectionData.data?.requests) ? inspectionData.data.requests : []);
+      const inspectionItems = inspectionList.map(i => ({
+        id: i.id,
+        type: { name: i.projectType?.name || 'درخواست بازرسی' },
+        client_name: `${i.firstName} ${i.lastName}`,
+        status: i.status,
+        createdAt: i.createdAt,
+        source: 'inspection_request',
+        uniqueId: `inspection_${i.id}`
+      }));
+      allItems = [...allItems, ...inspectionItems];
+    }
+    
+    // مرتب‌سازی بر اساس تاریخ
+    allItems.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    setItems(allItems);
     setLoading(false);
   };
 
   useEffect(() => { load(); }, []);
 
   const statusFa = {
+    // وضعیت‌های پروژه
     requested: "درخواست شده",
     quoted: "اعلام هزینه",
     scheduled: "زمان‌بندی",
@@ -31,12 +64,23 @@ export default function DashboardProjectsPage() {
     reporting: "ثبت گزارش",
     approved: "تایید نهایی",
     rejected: "رد شده",
+    // وضعیت‌های درخواست بازرسی
+    pending: "در انتظار بررسی",
+    reviewed: "بررسی شده",
+    archived: "آرشیو شده",
   };
 
-  const updateStatus = async (id, status) => {
+  const updateStatus = async (id, status, source) => {
     setStatusUpdating(id);
     try {
-      const res = await fetch(`/api/projects/requests/status/${id}`, {
+      let url;
+      if (source === 'inspection_request') {
+        url = `/api/inspection-requests/updateStatus/${id}`;
+      } else {
+        url = `/api/projects/requests/status/${id}`;
+      }
+      
+      const res = await fetch(url, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status }),
@@ -44,12 +88,46 @@ export default function DashboardProjectsPage() {
       });
       const data = await res.json();
       if (data.success) {
-        setItems(prev => prev.map(p => p.id === id ? { ...p, status } : p));
+        setItems(prev => prev.map(p => p.uniqueId === `${source}_${id}` ? { ...p, status } : p));
       } else {
         alert(data.message || 'خطا در تغییر وضعیت');
       }
     } finally {
       setStatusUpdating(null);
+    }
+  };
+
+  const convertToProject = async (inspectionRequestId) => {
+    if (!confirm('آیا می‌خواهید این درخواست بازرسی را به پروژه تبدیل کنید؟')) return;
+    
+    try {
+      const res = await fetch(`/api/inspection-requests/convertToProject/${inspectionRequestId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include'
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert('درخواست با موفقیت به پروژه تبدیل شد');
+        // حذف درخواست بازرسی از لیست و اضافه کردن پروژه جدید
+        setItems(prev => {
+          const filtered = prev.filter(p => p.uniqueId !== `inspection_${inspectionRequestId}`);
+          const newProject = {
+            id: data.data.project.id,
+            type: { name: data.data.project.type?.name || 'پروژه' },
+            client_name: data.data.project.client_name,
+            status: data.data.project.status,
+            createdAt: data.data.project.createdAt,
+            source: 'project',
+            uniqueId: `project_${data.data.project.id}`
+          };
+          return [...filtered, newProject].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        });
+      } else {
+        alert(data.message || 'خطا در تبدیل درخواست به پروژه');
+      }
+    } catch (error) {
+      alert('خطا در ارتباط با سرور');
     }
   };
 
@@ -90,9 +168,16 @@ export default function DashboardProjectsPage() {
           </thead>
           <tbody>
             {items.map((p) => (
-              <tr key={p.id} className="border-t">
+              <tr key={p.uniqueId} className="border-t">
                 <td className="p-3">{p.id}</td>
-                <td className="p-3">{p.type?.name || '-'}</td>
+                <td className="p-3">
+                  <div>
+                    <div className="font-medium">{p.type?.name || '-'}</div>
+                    <div className="text-xs text-gray-500">
+                      {p.source === 'inspection_request' ? 'درخواست بازرسی' : 'پروژه'}
+                    </div>
+                  </div>
+                </td>
                 <td className="p-3">{p.client_name}</td>
                 <td className="p-3">
                   <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-50 text-blue-700 border border-blue-200">{statusFa[p.status] || p.status}</span>
@@ -100,17 +185,33 @@ export default function DashboardProjectsPage() {
                 <td className="p-3">{new Date(p.createdAt).toLocaleDateString('fa-IR')}</td>
                 <td className="p-3">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <a href={`/dashboard/projects/${p.id}`}><Button variant="outline" size="sm">جزئیات</Button></a>
-                    <a href={`/dashboard/projects/${p.id}/costs`}><Button variant="outline" size="sm" className="bg-green-50 text-green-700 border-green-200">هزینه‌ها</Button></a>
-                    <a href={`/dashboard/projects/${p.id}/payments`}><Button variant="outline" size="sm" className="bg-blue-50 text-blue-700 border-blue-200">پرداختی‌ها</Button></a>
-                    <a href={`/dashboard/projects/${p.id}/reports`}><Button variant="outline" size="sm" className="bg-purple-50 text-purple-700 border-purple-200">گزارش‌ها</Button></a>
-                    <select disabled={statusUpdating===p.id} className="border rounded-lg px-2 py-1 focus:ring-2 focus:ring-blue-500 min-w-40"
-                          value={p.status}
-                          onChange={(e)=>updateStatus(p.id, e.target.value)}>
-                    {['requested','quoted','scheduled','inspecting','reporting','approved','rejected'].map(s=>
-                      <option key={s} value={s}>{statusFa[s] || s}</option>
+                    {p.source === 'inspection_request' ? (
+                      <>
+                        <Button variant="outline" size="sm" onClick={() => convertToProject(p.id)}>تبدیل به پروژه</Button>
+                        <Button variant="outline" size="sm" onClick={() => alert('جزئیات درخواست بازرسی')}>جزئیات</Button>
+                        <select disabled={statusUpdating===p.id} className="border rounded-lg px-2 py-1 focus:ring-2 focus:ring-blue-500 min-w-40"
+                              value={p.status}
+                              onChange={(e)=>updateStatus(p.id, e.target.value, p.source)}>
+                          {['pending','reviewed','approved','rejected','archived'].map(s=>
+                            <option key={s} value={s}>{statusFa[s] || s}</option>
+                          )}
+                        </select>
+                      </>
+                    ) : (
+                      <>
+                        <a href={`/dashboard/projects/${p.id}`}><Button variant="outline" size="sm">جزئیات</Button></a>
+                        <a href={`/dashboard/projects/${p.id}/costs`}><Button variant="outline" size="sm" className="bg-green-50 text-green-700 border-green-200">هزینه‌ها</Button></a>
+                        <a href={`/dashboard/projects/${p.id}/payments`}><Button variant="outline" size="sm" className="bg-blue-50 text-blue-700 border-blue-200">پرداختی‌ها</Button></a>
+                        <a href={`/dashboard/projects/${p.id}/reports`}><Button variant="outline" size="sm" className="bg-purple-50 text-purple-700 border-purple-200">گزارش‌ها</Button></a>
+                        <select disabled={statusUpdating===p.id} className="border rounded-lg px-2 py-1 focus:ring-2 focus:ring-blue-500 min-w-40"
+                              value={p.status}
+                              onChange={(e)=>updateStatus(p.id, e.target.value, p.source)}>
+                          {['requested','quoted','scheduled','inspecting','reporting','approved','rejected'].map(s=>
+                            <option key={s} value={s}>{statusFa[s] || s}</option>
+                          )}
+                        </select>
+                      </>
                     )}
-                  </select>
                   </div>
                 </td>
               </tr>

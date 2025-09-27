@@ -1,11 +1,12 @@
 import { API_ENDPOINTS } from "@/app/config/api";
 
-export async function DELETE(request, { params }) {
+export async function GET(request) {
   try {
-    const { id } = params;
-    
-    const backendResponse = await fetch(`${API_ENDPOINTS.projects.base}/forms/delete/${id}`, {
-      method: 'DELETE',
+    const url = new URL(API_ENDPOINTS.inspectionRequests.getAll);
+    const reqUrl = new URL(request.url);
+    reqUrl.searchParams.forEach((v,k)=>url.searchParams.set(k,v));
+    const backendResponse = await fetch(url.toString(), {
+      method: 'GET',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include'
     });

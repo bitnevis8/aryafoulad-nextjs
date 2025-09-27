@@ -1,13 +1,14 @@
 import { API_ENDPOINTS } from "@/app/config/api";
 
-export async function DELETE(request, { params }) {
+export async function POST(request) {
   try {
-    const { id } = params;
+    const body = await request.json();
     
-    const backendResponse = await fetch(`${API_ENDPOINTS.projects.base}/forms/delete/${id}`, {
-      method: 'DELETE',
+    const backendResponse = await fetch(API_ENDPOINTS.inspectionRequests.create, {
+      method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      credentials: 'include'
+      credentials: 'include',
+      body: JSON.stringify(body)
     });
 
     const data = await backendResponse.json();
