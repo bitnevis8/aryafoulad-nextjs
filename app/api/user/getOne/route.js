@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || (process.env.NODE_ENV === 'production' ? 'https://aryafoulad-api.pourdian.com' : 'http://localhost:3000');
 
 export async function GET(request) {
   try {
@@ -15,12 +15,15 @@ export async function GET(request) {
     }
 
     console.log("Fetching user with ID:", id);
-    console.log("API URL:", `${API_URL}/user/user/getOne/${id}`);
+    console.log("Environment:", process.env.NODE_ENV);
+    console.log("NEXT_PUBLIC_API_URL:", process.env.NEXT_PUBLIC_API_URL);
+    console.log("Final API URL:", `${API_URL}/user/user/getOne/${id}`);
 
     const response = await fetch(`${API_URL}/user/user/getOne/${id}`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
+        "Cookie": request.headers.get("cookie") || "",
       },
     });
 

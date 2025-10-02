@@ -112,10 +112,14 @@ export default function NewProformaPage() {
     
     if (!id) return;
     try {
+      console.log('Fetching customer data for ID:', id);
       const res = await fetch(`/api/user/getOne?id=${id}`, { credentials: 'include' });
       const data = await res.json();
+      console.log('Customer data response:', data);
+      
       const u = data?.data || data?.user || data;
       if (u) {
+        console.log('Setting buyer data:', u);
         setBuyer(prev => ({
           ...prev,
           buyer_legal_name: u.companyName || `${u.firstName || ''} ${u.lastName || ''}`.trim(),
@@ -129,8 +133,14 @@ export default function NewProformaPage() {
           buyer_national_identifier: u.nationalId || prev.buyer_national_identifier,
           buyer_economic_code: u.economicCode || prev.buyer_economic_code,
         }));
+      } else {
+        console.error('No user data found in response:', data);
+        alert('خطا در دریافت اطلاعات مشتری');
       }
-    } catch {}
+    } catch (error) {
+      console.error('Error fetching customer data:', error);
+      alert('خطا در ارتباط با سرور');
+    }
   };
 
   const submit = async () => {
