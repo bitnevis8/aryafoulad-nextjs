@@ -15,6 +15,10 @@ export default function CreateCustomerPage() {
     email: "",
     username: "",
     password: "123456", // پیشفرض، بعداً می‌توان به OTP تغییر داد
+    // فیلدهای مخصوص کاربر حقوقی
+    companyName: "",
+    economicCode: "",
+    registrationNumber: "",
   });
   
   const [companies, setCompanies] = useState([]);
@@ -94,23 +98,53 @@ export default function CreateCustomerPage() {
     e.preventDefault();
     setSaving(true);
     setMessage("");
+    
+    // اعتبارسنجی فیلدهای اجباری
+    if (!form.mobile) {
+      setMessage("لطفاً شماره موبایل را وارد کنید");
+      setSaving(false);
+      return;
+    }
+    
+    if (form.type === "person" && !form.firstName) {
+      setMessage("لطفاً نام را وارد کنید");
+      setSaving(false);
+      return;
+    }
+    
+    if (form.type === "company" && !form.companyName) {
+      setMessage("لطفاً نام شرکت را وارد کنید");
+      setSaving(false);
+      return;
+    }
+    
     try {
       // ساخت کاربر و تخصیص نقش "Customer"
       const res = await fetch("/api/user/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          firstName: form.firstName || "-",
-          lastName: form.lastName || "-",
-          email: form.email || `${Date.now()}@example.com`,
-          mobile: form.mobile || null,
+          // فیلدهای مشترک
+          email: form.email || null,
+          mobile: form.mobile,
           phone: form.phone || null,
           username: form.username || form.mobile || form.nationalId || undefined,
           password: form.password,
           roleIds: customerRoleId ? [customerRoleId] : undefined,
-          // فیلدهای پروفایل مشتری
-          nationalId: form.nationalId || null,
           type: form.type,
+          // فیلدهای کاربر حقیقی
+          ...(form.type === "person" && {
+            firstName: form.firstName || "-",
+            lastName: form.lastName || "-",
+            nationalId: form.nationalId || null,
+          }),
+          // فیلدهای کاربر حقوقی
+          ...(form.type === "company" && {
+            companyName: form.companyName || "-",
+            nationalId: form.nationalId || null,
+            economicCode: form.economicCode || null,
+            registrationNumber: form.registrationNumber || null,
+          }),
         })
       });
       const data = await res.json();
@@ -159,25 +193,64 @@ export default function CreateCustomerPage() {
               </select>
             </div>
 
-            {/* نام و نام خانوادگی */}
-            <div>
-              <label className="block mb-2 text-sm font-medium text-gray-700">نام</label>
-              <input 
-                value={form.firstName} 
-                onChange={e=>setForm(f=>({...f, firstName: e.target.value}))} 
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                placeholder="نام"
-              />
-            </div>
-            <div>
-              <label className="block mb-2 text-sm font-medium text-gray-700">نام خانوادگی</label>
-              <input 
-                value={form.lastName} 
-                onChange={e=>setForm(f=>({...f, lastName: e.target.value}))} 
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                placeholder="نام خانوادگی"
-              />
-            </div>
+            {/* فیلدهای کاربر حقیقی */}
+            {form.type === "person" && (
+              <>
+                <div>
+                  <label className="block mb-2 text-sm font-medium text-gray-700">نام *</label>
+                  <input 
+                    value={form.firstName} 
+                    onChange={e=>setForm(f=>({...f, firstName: e.target.value}))} 
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                    placeholder="نام"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block mb-2 text-sm font-medium text-gray-700">نام خانوادگی</label>
+                  <input 
+                    value={form.lastName} 
+                    onChange={e=>setForm(f=>({...f, lastName: e.target.value}))} 
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                    placeholder="نام خانوادگی"
+                  />
+                </div>
+              </>
+            )}
+
+            {/* فیلدهای کاربر حقوقی */}
+            {form.type === "company" && (
+              <>
+                <div>
+                  <label className="block mb-2 text-sm font-medium text-gray-700">نام شرکت *</label>
+                  <input 
+                    value={form.companyName} 
+                    onChange={e=>setForm(f=>({...f, companyName: e.target.value}))} 
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                    placeholder="نام شرکت"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block mb-2 text-sm font-medium text-gray-700">کد اقتصادی</label>
+                  <input 
+                    value={form.economicCode} 
+                    onChange={e=>setForm(f=>({...f, economicCode: e.target.value}))} 
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                    placeholder="کد اقتصادی"
+                  />
+                </div>
+                <div>
+                  <label className="block mb-2 text-sm font-medium text-gray-700">شماره ثبت</label>
+                  <input 
+                    value={form.registrationNumber} 
+                    onChange={e=>setForm(f=>({...f, registrationNumber: e.target.value}))} 
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                    placeholder="شماره ثبت"
+                  />
+                </div>
+              </>
+            )}
 
             {/* کد ملی */}
             <div>
@@ -206,34 +279,35 @@ export default function CreateCustomerPage() {
 
             {/* تلفن */}
             <div>
-              <label className="block mb-2 text-sm font-medium text-gray-700">تلفن</label>
+              <label className="block mb-2 text-sm font-medium text-gray-700">تلفن (اختیاری)</label>
               <input 
                 value={form.phone} 
                 onChange={e=>setForm(f=>({...f, phone: e.target.value}))} 
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                placeholder="تلفن"
+                placeholder="تلفن (اختیاری)"
               />
             </div>
 
             {/* موبایل */}
             <div>
-              <label className="block mb-2 text-sm font-medium text-gray-700">موبایل</label>
+              <label className="block mb-2 text-sm font-medium text-gray-700">موبایل *</label>
               <input 
                 value={form.mobile} 
                 onChange={e=>setForm(f=>({...f, mobile: e.target.value}))} 
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                 placeholder="موبایل"
+                required
               />
             </div>
 
             {/* نام کاربری */}
             <div>
-              <label className="block mb-2 text-sm font-medium text-gray-700">نام کاربری</label>
+              <label className="block mb-2 text-sm font-medium text-gray-700">نام کاربری (اختیاری)</label>
               <input 
                 value={form.username} 
                 onChange={e=>setForm(f=>({...f, username: e.target.value}))} 
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                placeholder="نام کاربری"
+                placeholder="نام کاربری (اختیاری)"
               />
             </div>
 

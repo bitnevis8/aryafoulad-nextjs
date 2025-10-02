@@ -13,16 +13,27 @@ const EditUserPage = () => {
   const [loadingRoles, setLoadingRoles] = useState(true);
   const [error, setError] = useState(null);
   const [formData, setFormData] = useState({
+    type: "person", // پیش‌فرض: حقیقی
     firstName: "",
     lastName: "",
     username: "",
     email: "",
     mobile: "",
     phone: "",
+    fax: "",
     businessName: "",
     businessContactInfo: "",
+    address: "",
+    province: "",
+    city: "",
+    postalCode: "",
     roleIds: [],
-    type: "person"
+    signature: null,
+    // فیلدهای مخصوص کاربر حقوقی
+    companyName: "",
+    nationalId: "",
+    economicCode: "",
+    registrationNumber: "",
   });
   const [roles, setRoles] = useState([]);
   const [submitting, setSubmitting] = useState(false);
@@ -60,10 +71,20 @@ const EditUserPage = () => {
             email: userData.data.email || "",
             mobile: userData.data.mobile || "",
             phone: userData.data.phone || "",
+            fax: userData.data.fax || "",
+            companyName: userData.data.companyName || "",
+            nationalId: userData.data.nationalId || "",
+            economicCode: userData.data.economicCode || "",
+            registrationNumber: userData.data.registrationNumber || "",
             businessName: userData.data.businessName || "",
             businessContactInfo: userData.data.businessContactInfo || "",
             roleIds: userData.data.roles ? userData.data.roles.map(role => role.id) : [],
-            type: userData.data.type || "person"
+            type: userData.data.type || "person",
+            signature: userData.data.signature || null,
+            address: userData.data.address || "",
+            province: userData.data.province || "",
+            city: userData.data.city || "",
+            postalCode: userData.data.postalCode || "",
           });
         } else {
           setError(userData.message || "خطا در دریافت اطلاعات کاربر");
@@ -110,7 +131,23 @@ const EditUserPage = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+    
+    if (name === "type") {
+      // وقتی نوع کاربر تغییر می‌کند، فیلدهای مربوطه را پاک کن
+      setFormData(prev => ({
+        ...prev,
+        [name]: value,
+        // پاک کردن فیلدهای مربوط به نوع قبلی
+        firstName: value === "person" ? prev.firstName : "",
+        lastName: value === "person" ? prev.lastName : "",
+        companyName: value === "company" ? prev.companyName : "",
+        nationalId: "",
+        economicCode: "",
+        registrationNumber: "",
+      }));
+    } else {
+      setFormData({ ...formData, [name]: value });
+    }
   };
 
   const handleRoleChange = (e) => {
@@ -119,6 +156,84 @@ const EditUserPage = () => {
       .filter((option) => option.selected)
       .map((option) => parseInt(option.value, 10));
     setFormData({ ...formData, roleIds: selectedRoleIds });
+  };
+
+  const handleSignatureUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Check file type
+    if (!file.type.startsWith('image/')) {
+      setError('لطفاً یک فایل تصویری انتخاب کنید');
+      return;
+    }
+
+    // Check file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setError('حجم فایل نباید بیشتر از 5 مگابایت باشد');
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      const formData = new FormData();
+      formData.append('signature', file);
+
+      const response = await fetch(API_ENDPOINTS.signatures.upload, {
+        method: 'POST',
+        body: formData,
+        credentials: 'include', // برای ارسال کوکی‌های احراز هویت
+      });
+
+      const data = await response.json();
+      
+      if (data.success) {
+        setFormData(prev => ({
+          ...prev,
+          signature: data.data.filename // ذخیره نام فایل به جای URL کامل
+        }));
+        setError(null); // پاک کردن خطاهای قبلی
+        console.log('Signature uploaded successfully:', data.data.filename);
+        console.log('Signature URL:', API_ENDPOINTS.signatures.download(data.data.filename));
+      } else {
+        setError(data.message || 'خطا در آپلود امضا');
+      }
+    } catch (error) {
+      setError('خطا در آپلود فایل');
+      console.error('Signature upload error:', error);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleSignatureDelete = async () => {
+    if (!formData.signature) return;
+
+    try {
+      setSubmitting(true);
+      const response = await fetch(API_ENDPOINTS.signatures.delete(formData.signature), {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+
+      const data = await response.json();
+      
+      if (data.success) {
+        setFormData(prev => ({
+          ...prev,
+          signature: null
+        }));
+        setError(null);
+        console.log('Signature deleted successfully');
+      } else {
+        setError(data.message || 'خطا در حذف امضا');
+      }
+    } catch (error) {
+      setError('خطا در حذف فایل');
+      console.error('Signature delete error:', error);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -289,46 +404,119 @@ const EditUserPage = () => {
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* انتخاب نوع کاربر */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                نوع کاربر
+              </label>
+              <div className="flex space-x-4 rtl:space-x-reverse">
+                <label className="flex items-center">
+                  <input
+                    type="radio"
+                    name="type"
+                    value="person"
+                    checked={formData.type === "person"}
+                    onChange={handleChange}
+                    className="mr-2"
+                  />
+                  <span className="text-sm text-gray-700">حقیقی</span>
+                </label>
+                <label className="flex items-center">
+                  <input
+                    type="radio"
+                    name="type"
+                    value="company"
+                    checked={formData.type === "company"}
+                    onChange={handleChange}
+                    className="mr-2"
+                  />
+                  <span className="text-sm text-gray-700">حقوقی</span>
+                </label>
+              </div>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+              {/* فیلدهای کاربر حقیقی */}
+              {formData.type === "person" && (
+                <>
+                  <div>
+                    <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-1">نام *:</label>
+                    <input
+                      type="text"
+                      id="firstName"
+                      name="firstName"
+                      value={formData.firstName}
+                      onChange={handleChange}
+                      className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-1">نام خانوادگی:</label>
+                    <input
+                      type="text"
+                      id="lastName"
+                      name="lastName"
+                      value={formData.lastName}
+                      onChange={handleChange}
+                      className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    />
+                  </div>
+                </>
+              )}
+
+              {/* فیلدهای کاربر حقوقی */}
+              {formData.type === "company" && (
+                <>
+                  <div>
+                    <label htmlFor="companyName" className="block text-sm font-medium text-gray-700 mb-1">نام شرکت *:</label>
+                    <input
+                      type="text"
+                      id="companyName"
+                      name="companyName"
+                      value={formData.companyName}
+                      onChange={handleChange}
+                      className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="nationalId" className="block text-sm font-medium text-gray-700 mb-1">کد ملی شرکت:</label>
+                    <input
+                      type="text"
+                      id="nationalId"
+                      name="nationalId"
+                      value={formData.nationalId}
+                      onChange={handleChange}
+                      className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="economicCode" className="block text-sm font-medium text-gray-700 mb-1">کد اقتصادی:</label>
+                    <input
+                      type="text"
+                      id="economicCode"
+                      name="economicCode"
+                      value={formData.economicCode}
+                      onChange={handleChange}
+                      className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="registrationNumber" className="block text-sm font-medium text-gray-700 mb-1">شماره ثبت:</label>
+                    <input
+                      type="text"
+                      id="registrationNumber"
+                      name="registrationNumber"
+                      value={formData.registrationNumber}
+                      onChange={handleChange}
+                      className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    />
+                  </div>
+                </>
+              )}
               <div>
-                <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-1">نام:</label>
-                <input
-                  type="text"
-                  id="firstName"
-                  name="firstName"
-                  value={formData.firstName}
-                  onChange={handleChange}
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  required
-                />
-              </div>
-              <div>
-                <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-1">نام خانوادگی:</label>
-                <input
-                  type="text"
-                  id="lastName"
-                  name="lastName"
-                  value={formData.lastName}
-                  onChange={handleChange}
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  required
-                />
-              </div>
-              <div>
-                <label htmlFor="type" className="block text-sm font-medium text-gray-700 mb-1">نوع مشتری:</label>
-                <select
-                  id="type"
-                  name="type"
-                  value={formData.type}
-                  onChange={handleChange}
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                >
-                  <option value="person">حقیقی</option>
-                  <option value="company">حقوقی</option>
-                </select>
-              </div>
-              <div>
-                <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">نام کاربری:</label>
+                <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">نام کاربری (اختیاری):</label>
                 <input
                   type="text"
                   id="username"
@@ -336,11 +524,10 @@ const EditUserPage = () => {
                   value={formData.username}
                   onChange={handleChange}
                   className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  required
                 />
               </div>
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">ایمیل:</label>
+                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">ایمیل (اختیاری):</label>
                 <input
                   type="email"
                   id="email"
@@ -348,27 +535,38 @@ const EditUserPage = () => {
                   value={formData.email}
                   onChange={handleChange}
                   className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  required
                 />
               </div>
               <div>
-                <label htmlFor="mobile" className="block text-sm font-medium text-gray-700 mb-1">موبایل:</label>
+                <label htmlFor="mobile" className="block text-sm font-medium text-gray-700 mb-1">موبایل *:</label>
                 <input
                   type="tel"
                   id="mobile"
                   name="mobile"
                   value={formData.mobile}
                   onChange={handleChange}
+                  required
                   className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 />
               </div>
               <div>
-                <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">تلفن:</label>
+                <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">تلفن (اختیاری):</label>
                 <input
                   type="tel"
                   id="phone"
                   name="phone"
                   value={formData.phone}
+                  onChange={handleChange}
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                />
+              </div>
+              <div>
+                <label htmlFor="fax" className="block text-sm font-medium text-gray-700 mb-1">نمابر (اختیاری):</label>
+                <input
+                  type="text"
+                  id="fax"
+                  name="fax"
+                  value={formData.fax}
                   onChange={handleChange}
                   className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 />
@@ -396,6 +594,52 @@ const EditUserPage = () => {
                 />
               </div>
               <div>
+                <label htmlFor="province" className="block text-sm font-medium text-gray-700 mb-1">استان (اختیاری):</label>
+                <input
+                  type="text"
+                  id="province"
+                  name="province"
+                  value={formData.province}
+                  onChange={handleChange}
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                />
+              </div>
+              <div>
+                <label htmlFor="city" className="block text-sm font-medium text-gray-700 mb-1">شهر (اختیاری):</label>
+                <input
+                  type="text"
+                  id="city"
+                  name="city"
+                  value={formData.city}
+                  onChange={handleChange}
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                />
+              </div>
+              <div>
+                <label htmlFor="postalCode" className="block text-sm font-medium text-gray-700 mb-1">کد پستی ۱۰ رقمی (اختیاری):</label>
+                <input
+                  type="text"
+                  id="postalCode"
+                  name="postalCode"
+                  value={formData.postalCode}
+                  onChange={handleChange}
+                  inputMode="numeric"
+                  pattern="\d{10}"
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                />
+              </div>
+              <div className="md:col-span-2">
+                <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-1">نشانی (اختیاری):</label>
+                <textarea
+                  id="address"
+                  name="address"
+                  value={formData.address}
+                  onChange={handleChange}
+                  rows="2"
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                />
+              </div>
+              <div>
                 <label htmlFor="roleIds" className="block text-sm font-medium text-gray-700 mb-1">نقش‌ها:</label>
                 <select
                   id="roleIds"
@@ -412,6 +656,55 @@ const EditUserPage = () => {
                   ))}
                 </select>
                 <p className="mt-1 text-xs text-gray-500">برای انتخاب چندگانه، Ctrl (یا Cmd) را نگه دارید و کلیک کنید.</p>
+              </div>
+              
+              <div>
+                <label htmlFor="signature" className="block text-sm font-medium text-gray-700 mb-1">امضا (اختیاری):</label>
+                <div className="space-y-2">
+                  <input
+                    type="file"
+                    id="signature"
+                    accept="image/*"
+                    onChange={handleSignatureUpload}
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  />
+                  {formData.signature && (
+                    <div className="mt-2">
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-sm text-green-600">امضا فعلی:</p>
+                        <button
+                          type="button"
+                          onClick={handleSignatureDelete}
+                          disabled={submitting}
+                          className="text-red-600 hover:text-red-800 text-sm font-medium disabled:opacity-50"
+                        >
+                          حذف امضا
+                        </button>
+                      </div>
+                      <div className="relative">
+                        <img 
+                          src={API_ENDPOINTS.signatures.download(formData.signature)} 
+                          alt="امضا" 
+                          className="max-w-xs max-h-32 border border-gray-300 rounded"
+                          onError={(e) => {
+                            console.error('Error loading signature image:', e);
+                            console.error('Failed URL:', API_ENDPOINTS.signatures.download(formData.signature));
+                            e.target.style.display = 'none';
+                            // نمایش پیام خطا
+                            const errorDiv = document.createElement('div');
+                            errorDiv.className = 'text-red-500 text-sm p-2 border border-red-300 rounded';
+                            errorDiv.textContent = 'خطا در نمایش تصویر امضا';
+                            e.target.parentNode.appendChild(errorDiv);
+                          }}
+                          onLoad={() => {
+                            console.log('Signature image loaded successfully');
+                            console.log('Loaded URL:', API_ENDPOINTS.signatures.download(formData.signature));
+                          }}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 

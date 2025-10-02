@@ -18,6 +18,8 @@ export default function UserManagementPage() {
   const [totalCount, setTotalCount] = useState(0);
   const [hasNextPage, setHasNextPage] = useState(false);
   const [hasPrevPage, setHasPrevPage] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [userToDelete, setUserToDelete] = useState(null);
 
   const fetchUsers = useCallback(async (query = '', sort = sortBy, order = sortOrder, page = currentPage) => {
     setLoading(true);
@@ -100,6 +102,37 @@ export default function UserManagementPage() {
     }
   };
 
+  const handleDeleteSignature = async (user) => {
+    if (!user.signature) return;
+
+    if (!confirm("آیا مطمئن هستید که می‌خواهید امضای این کاربر را حذف کنید؟")) {
+      return;
+    }
+
+    try {
+      const response = await fetch(API_ENDPOINTS.signatures.delete(user.signature), {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+
+      const data = await response.json();
+      
+      if (data.success) {
+        // به‌روزرسانی لیست کاربران
+        setUsers(users.map(u => 
+          u.id === user.id ? { ...u, signature: null } : u
+        ));
+        alert('امضا با موفقیت حذف شد');
+        console.log('Signature deleted successfully');
+      } else {
+        alert(data.message || 'خطا در حذف امضا');
+      }
+    } catch (error) {
+      alert('خطا در حذف فایل');
+      console.error('Signature delete error:', error);
+    }
+  };
+
   const getSortIcon = (column) => {
     if (sortBy === column) {
       return sortOrder === "asc" ? "▲" : "▼";
@@ -171,6 +204,9 @@ export default function UserManagementPage() {
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                   نقش‌ها
                 </th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  امضا
+                </th>
                 <th
                   className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
                   onClick={() => handleSort("createdAt")}
@@ -185,13 +221,13 @@ export default function UserManagementPage() {
             <tbody className="bg-white divide-y divide-gray-200">
               {loading ? (
                 <tr>
-                  <td colSpan="7" className="text-center py-4 text-gray-500">
+                  <td colSpan="8" className="text-center py-4 text-gray-500">
                     در حال بارگذاری...
                   </td>
                 </tr>
               ) : users.length === 0 ? (
                 <tr>
-                  <td colSpan="7" className="text-center py-4 text-gray-500">
+                  <td colSpan="8" className="text-center py-4 text-gray-500">
                     کاربری یافت نشد.
                   </td>
                 </tr>
@@ -206,6 +242,31 @@ export default function UserManagementPage() {
                       {user.roles && user.roles.length > 0
                         ? user.roles.map((role) => role.nameFa).join(", ")
                         : "-"}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">
+                      {user.signature ? (
+                        <div className="flex items-center space-x-2 rtl:space-x-reverse">
+                          <img 
+                            src={API_ENDPOINTS.signatures.download(user.signature)} 
+                            alt="امضا" 
+                            className="w-16 h-8 object-contain border border-gray-300 rounded"
+                            onError={(e) => {
+                              console.error('Error loading signature image:', e);
+                              e.target.style.display = 'none';
+                              e.target.nextSibling.style.display = 'inline';
+                            }}
+                          />
+                          <button
+                            onClick={() => handleDeleteSignature(user)}
+                            className="text-red-600 hover:text-red-800 text-xs"
+                            title="حذف امضا"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ) : (
+                        <span className="text-gray-400">-</span>
+                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">
                       {new Date(user.createdAt).toLocaleDateString("fa-IR")}

@@ -123,6 +123,19 @@ export const API_ENDPOINTS = {
     me: `${API_BASE_URL}/user/auth/me`,
     logout: `${API_BASE_URL}/user/auth/logout`,
   },
+  signatures: {
+    upload: `${API_BASE_URL}/signatures/upload`,
+    download: (filename) => `${API_BASE_URL}/signatures/download/${filename}`,
+    delete: (filename) => `${API_BASE_URL}/signatures/delete/${filename}`,
+  },
+  logo: {
+    upload: `${API_BASE_URL}/logo/upload`,
+    download: `${API_BASE_URL}/logo/download`,
+  },
+  companySignature: {
+    upload: `${API_BASE_URL}/company-signature/upload`,
+    download: `${API_BASE_URL}/company-signature/download`,
+  },
   leaveRequest: {
     base: `${API_BASE_URL}/leave-request`,
     create: `${API_BASE_URL}/leave-request/create`,
@@ -157,5 +170,35 @@ export const API_ENDPOINTS = {
       delete: (id) => `${API_BASE_URL}/aryafoulad/projects/payments/delete/${id}`
     },
 
+  }
+  ,
+  accounting: {
+    base: `${API_BASE_URL}/accounting`,
+    settings: {
+      get: `${API_BASE_URL}/accounting/settings`,
+      update: `${API_BASE_URL}/accounting/settings`,
+    },
+    invoices: {
+      getAll: `${API_BASE_URL}/accounting/invoices/getAll`,
+      getOne: (id) => `${API_BASE_URL}/accounting/invoices/getOne/${id}`,
+      create: `${API_BASE_URL}/accounting/invoices/create`,
+      convert: (id) => `${API_BASE_URL}/accounting/invoices/convert/${id}`,
+      update: (id) => `${API_BASE_URL}/accounting/invoices/update/${id}`,
+    }
+    ,
+    services: {
+      getAll: `${API_BASE_URL}/accounting/services/getAll`,
+      create: `${API_BASE_URL}/accounting/services/create`,
+      update: (id) => `${API_BASE_URL}/accounting/services/update/${id}`,
+      delete: (id) => `${API_BASE_URL}/accounting/services/delete/${id}`,
+    }
+    ,
+    bankAccounts: {
+      getAll: `${API_BASE_URL}/accounting/bank-accounts`,
+      getOne: (id) => `${API_BASE_URL}/accounting/bank-accounts/${id}`,
+      create: `${API_BASE_URL}/accounting/bank-accounts/create`,
+      update: (id) => `${API_BASE_URL}/accounting/bank-accounts/update/${id}`,
+      delete: (id) => `${API_BASE_URL}/accounting/bank-accounts/delete/${id}`,
+    }
   }
 }; 

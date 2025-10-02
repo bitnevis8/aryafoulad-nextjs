@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Select from "react-select";
 
-export default function UserSelect({ value, onChange, placeholder = "انتخاب کاربر" }) {
+export default function UserSelect({ value, onChange, placeholder = "انتخاب کاربر", filterRole }) {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -23,11 +23,16 @@ export default function UserSelect({ value, onChange, placeholder = "انتخا�
     return [];
   }, [users]);
 
-  const options = useMemo(() => flatUsers.map(u => ({
+  const filteredUsers = useMemo(() => {
+    if (!filterRole) return flatUsers;
+    return flatUsers.filter(u => Array.isArray(u.roles) && u.roles.some(r => r?.name === filterRole));
+  }, [flatUsers, filterRole]);
+
+  const options = useMemo(() => filteredUsers.map(u => ({
     value: u.id,
     label: `${u.firstName ? `${u.firstName} ${u.lastName || ''}`.trim() : (u.username || u.email || u.mobile || 'بدون نام')}` +
            `${u.roles?.length ? ` - ${u.roles.map(r=>r.nameFa || r.name || r.nameEn).join('، ')}` : ''}`
-  })), [flatUsers]);
+  })), [filteredUsers]);
 
   const selected = useMemo(() => options.find(o => o.value === value) || null, [options, value]);
 

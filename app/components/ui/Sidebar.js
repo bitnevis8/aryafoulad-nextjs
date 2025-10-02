@@ -32,6 +32,16 @@ const menuItems = [
     submenu: [
       { title: 'مدیریت مراکز', path: '/dashboard/settings/unit-locations', icon: '📍' },
       { title: 'مدیریت نرخ‌ها', path: '/dashboard/settings/rate-settings', icon: '💰' },
+      { title: 'مدیریت حسابداری', path: '/dashboard/settings/accounting', icon: '📒' },
+    ],
+  },
+  {
+    title: 'حسابداری',
+    icon: '💼',
+    submenu: [
+      { title: 'صدور پیش‌فاکتور', path: '/dashboard/accounting/proforma/new', icon: '🧾' },
+      { title: 'صدور فاکتور', path: '/dashboard/accounting/invoice/new', icon: '🧾' },
+      { title: 'لیست صورتحساب‌ها', path: '/dashboard/accounting/invoices', icon: '📋' },
     ],
   },
   {
