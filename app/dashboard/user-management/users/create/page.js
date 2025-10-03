@@ -163,6 +163,31 @@ export default function CreateUser() {
     setLoading(true);
     setError(null);
 
+    // اعتبارسنجی فیلدهای اجباری
+    if (!formData.mobile) {
+      setError("لطفاً شماره موبایل را وارد کنید");
+      setLoading(false);
+      return;
+    }
+    
+    if (formData.type === "person" && !formData.firstName) {
+      setError("لطفاً نام را وارد کنید");
+      setLoading(false);
+      return;
+    }
+    
+    if (formData.type === "person" && !formData.lastName) {
+      setError("لطفاً نام خانوادگی را وارد کنید");
+      setLoading(false);
+      return;
+    }
+    
+    if (formData.type === "company" && !formData.companyName) {
+      setError("لطفاً نام شرکت را وارد کنید");
+      setLoading(false);
+      return;
+    }
+
     try {
       // آماده‌سازی داده‌ها بر اساس نوع کاربر
       const submitData = {
@@ -259,7 +284,7 @@ export default function CreateUser() {
               <>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    نام *
+                    نام <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
@@ -273,13 +298,14 @@ export default function CreateUser() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    نام خانوادگی
+                    نام خانوادگی <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
                     name="lastName"
                     value={formData.lastName}
                     onChange={handleChange}
+                    required
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
@@ -291,7 +317,7 @@ export default function CreateUser() {
               <>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    نام شرکت *
+                    نام شرکت <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
@@ -359,7 +385,7 @@ export default function CreateUser() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                موبایل *
+                موبایل <span className="text-red-500">*</span>
               </label>
               <input
                 type="tel"

@@ -112,6 +112,12 @@ export default function CreateCustomerPage() {
       return;
     }
     
+    if (form.type === "person" && !form.lastName) {
+      setMessage("لطفاً نام خانوادگی را وارد کنید");
+      setSaving(false);
+      return;
+    }
+    
     if (form.type === "company" && !form.companyName) {
       setMessage("لطفاً نام شرکت را وارد کنید");
       setSaving(false);
@@ -197,7 +203,9 @@ export default function CreateCustomerPage() {
             {form.type === "person" && (
               <>
                 <div>
-                  <label className="block mb-2 text-sm font-medium text-gray-700">نام *</label>
+                  <label className="block mb-2 text-sm font-medium text-gray-700">
+                    نام <span className="text-red-500">*</span>
+                  </label>
                   <input 
                     value={form.firstName} 
                     onChange={e=>setForm(f=>({...f, firstName: e.target.value}))} 
@@ -207,12 +215,15 @@ export default function CreateCustomerPage() {
                   />
                 </div>
                 <div>
-                  <label className="block mb-2 text-sm font-medium text-gray-700">نام خانوادگی</label>
+                  <label className="block mb-2 text-sm font-medium text-gray-700">
+                    نام خانوادگی <span className="text-red-500">*</span>
+                  </label>
                   <input 
                     value={form.lastName} 
                     onChange={e=>setForm(f=>({...f, lastName: e.target.value}))} 
                     className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                     placeholder="نام خانوادگی"
+                    required
                   />
                 </div>
               </>
@@ -222,7 +233,9 @@ export default function CreateCustomerPage() {
             {form.type === "company" && (
               <>
                 <div>
-                  <label className="block mb-2 text-sm font-medium text-gray-700">نام شرکت *</label>
+                  <label className="block mb-2 text-sm font-medium text-gray-700">
+                    نام شرکت <span className="text-red-500">*</span>
+                  </label>
                   <input 
                     value={form.companyName} 
                     onChange={e=>setForm(f=>({...f, companyName: e.target.value}))} 
@@ -290,7 +303,9 @@ export default function CreateCustomerPage() {
 
             {/* موبایل */}
             <div>
-              <label className="block mb-2 text-sm font-medium text-gray-700">موبایل *</label>
+              <label className="block mb-2 text-sm font-medium text-gray-700">
+                موبایل <span className="text-red-500">*</span>
+              </label>
               <input 
                 value={form.mobile} 
                 onChange={e=>setForm(f=>({...f, mobile: e.target.value}))} 
