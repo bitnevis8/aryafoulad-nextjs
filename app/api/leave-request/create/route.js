@@ -4,7 +4,7 @@ export async function POST(request) {
   try {
     const body = await request.json();
     
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || (process.env.NODE_ENV === 'production' ? 'https://aryafoulad-api.pourdian.com' : 'http://localhost:3000');
     const response = await fetch(`${apiUrl}/leave-request/create`, {
       method: 'POST',
       headers: {
