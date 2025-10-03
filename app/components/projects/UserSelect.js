@@ -28,11 +28,33 @@ export default function UserSelect({ value, onChange, placeholder = "انتخا�
     return flatUsers.filter(u => Array.isArray(u.roles) && u.roles.some(r => r?.name === filterRole));
   }, [flatUsers, filterRole]);
 
-  const options = useMemo(() => filteredUsers.map(u => ({
-    value: u.id,
-    label: `${u.firstName ? `${u.firstName} ${u.lastName || ''}`.trim() : (u.username || u.email || u.mobile || 'بدون نام')}` +
-           `${u.roles?.length ? ` - ${u.roles.map(r=>r.nameFa || r.name || r.nameEn).join('، ')}` : ''}`
-  })), [filteredUsers]);
+  const options = useMemo(() => filteredUsers.map(u => {
+    // تعیین نام بر اساس نوع کاربر
+    let displayName = '';
+    if (u.type === 'company' && u.companyName) {
+      // کاربر حقوقی: نام شرکت
+      displayName = u.companyName;
+    } else if (u.type === 'person') {
+      // کاربر حقیقی: نام + نام خانوادگی
+      displayName = `${u.firstName || ''} ${u.lastName || ''}`.trim();
+    } else {
+      // fallback: اگر نوع مشخص نیست، هر کدام که موجود باشد
+      displayName = u.companyName || `${u.firstName || ''} ${u.lastName || ''}`.trim();
+    }
+    
+    // اگر نام خالی است، از username یا email استفاده کن
+    if (!displayName) {
+      displayName = u.username || u.email || u.mobile || 'بدون نام';
+    }
+    
+    // اضافه کردن نقش‌ها
+    const rolesText = u.roles?.length ? ` - ${u.roles.map(r=>r.nameFa || r.name || r.nameEn).join('، ')}` : '';
+    
+    return {
+      value: u.id,
+      label: displayName + rolesText
+    };
+  }), [filteredUsers]);
 
   const selected = useMemo(() => options.find(o => o.value === value) || null, [options, value]);
 

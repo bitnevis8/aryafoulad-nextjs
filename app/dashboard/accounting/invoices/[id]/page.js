@@ -50,6 +50,28 @@ export default function InvoiceViewPage({ params }) {
     try { return iso ? new Date(iso).toLocaleDateString('fa-IR') : ''; } catch { return ''; }
   };
 
+  // تابع تبدیل اعداد انگلیسی به فارسی
+  const toPersianNumbers = (str) => {
+    if (!str) return '';
+    const persianDigits = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
+    return str.toString().replace(/[0-9]/g, (digit) => persianDigits[parseInt(digit)]);
+  };
+
+  // تابع برای تغییر ترتیب شماره فاکتور
+  const formatInvoiceNumber = (invoiceNumber) => {
+    if (!invoiceNumber) return invoiceNumber;
+    
+    // اگر شماره فاکتور به فرمت year-customerId-invoiceNumber است
+    const parts = invoiceNumber.toString().split('-');
+    if (parts.length === 3) {
+      // تغییر ترتیب به invoiceNumber-customerId-year
+      const [year, customerId, invoiceNum] = parts;
+      return `${invoiceNum}-${customerId}-${year}`;
+    }
+    
+    return invoiceNumber;
+  };
+
   const computeTotals = (items, travelCost, taxPercent, dutiesPercent) => {
     const numeric = (v) => Number(v || 0);
     let subtotal = 0;
@@ -109,30 +131,29 @@ export default function InvoiceViewPage({ params }) {
 
       {/* Invoice Document - A4 Landscape */}
       <div className="bg-white border rounded-lg p-6 mx-auto" style={{ width: '297mm', minHeight: '210mm', maxWidth: '100%' }}>
-        {/* Header Row */}
-        <div className="grid grid-cols-12 gap-3 mb-4">
-          {/* Logo - Right 2/12 */}
-          <div className="col-span-2 flex justify-center items-center">
+        {/* Header Row - All Centered */}
+        <div className="flex items-center justify-center gap-4 mb-4">
+          {/* Logo */}
+          <div className="flex-shrink-0 mr-2">
             <img 
               src={`${API_ENDPOINTS.logo.download}?v=${Date.now()}`}
               alt="لوگوی شرکت"
-              className="max-w-full max-h-16 object-contain"
+              className="max-w-28 max-h-28 object-contain"
               onError={(e) => { e.currentTarget.style.display = 'none'; }}
             />
           </div>
           
-          {/* Title - Center 8/12 */}
-          <div className="col-span-8 text-center">
+          {/* Main Content - Centered */}
+          <div className="text-center flex-1">
             <div className="text-base font-bold mb-1">بسمه تعالی</div>
             <div className="text-lg font-bold mb-1">{seller?.seller_name || 'شرکت آریا فولاد قرن'}</div>
             <div className="text-base font-semibold">صورتحساب فروش کالا و خدمات</div>
           </div>
           
-          {/* Invoice Info - Left 2/12 */}
-          <div className="col-span-2 text-right">
-            <div className="text-xs mb-1">شماره: {invoice.number}</div>
-            <div className="text-xs mb-1">تاریخ: {toPersianDate(invoice.invoice_date)}</div>
-            <div className="text-xs">شماره پرونده: {invoice.file_number || '-'}</div>
+          {/* Invoice Info - Left */}
+          <div className="text-left flex-shrink-0 ml-4">
+            <div className="text-sm mb-1">شماره: {toPersianNumbers(formatInvoiceNumber(invoice.number || invoice.id))}</div>
+            <div className="text-sm mb-1">تاریخ: {toPersianDate(invoice.invoice_date)}</div>
           </div>
         </div>
 
@@ -143,17 +164,17 @@ export default function InvoiceViewPage({ params }) {
             <h3 className="font-bold mb-3 text-center text-sm text-gray-800 bg-white py-2 rounded border">مشخصات فروشنده</h3>
             <div className="text-xs leading-relaxed">
               <span className="font-semibold text-gray-700">نام شرکت:</span> <span className="mr-2">{seller?.seller_name || '-'}</span> | 
-              <span className="font-semibold text-gray-700 mr-1"> تلفن:</span> <span className="mr-2">{seller?.seller_phone || '-'}</span> | 
-              <span className="font-semibold text-gray-700 mr-1"> فکس:</span> <span className="mr-2">{seller?.seller_fax || '-'}</span> | 
-              <span className="font-semibold text-gray-700 mr-1"> شماره ثبت:</span> <span className="mr-2">{seller?.seller_registration_number || '-'}</span> | 
-              <span className="font-semibold text-gray-700 mr-1"> شماره اقتصادی:</span> <span className="mr-2">{seller?.seller_economic_code || '-'}</span> | 
-              <span className="font-semibold text-gray-700 mr-1"> شناسه ملی:</span> <span className="mr-2">{seller?.seller_national_identifier || '-'}</span>
+              <span className="font-semibold text-gray-700 mr-1"> تلفن:</span> <span className="mr-2">{toPersianNumbers(seller?.seller_phone || '-')}</span> | 
+              <span className="font-semibold text-gray-700 mr-1"> فکس:</span> <span className="mr-2">{toPersianNumbers(seller?.seller_fax || '-')}</span> | 
+              <span className="font-semibold text-gray-700 mr-1"> شماره ثبت:</span> <span className="mr-2">{toPersianNumbers(seller?.seller_registration_number || '-')}</span> | 
+              <span className="font-semibold text-gray-700 mr-1"> شماره اقتصادی:</span> <span className="mr-2">{toPersianNumbers(seller?.seller_economic_code || '-')}</span> | 
+              <span className="font-semibold text-gray-700 mr-1"> شناسه ملی:</span> <span className="mr-2">{toPersianNumbers(seller?.seller_national_identifier || '-')}</span>
             </div>
             <div className="text-xs leading-relaxed mt-2 pt-2 border-t border-gray-300">
               <span className="font-semibold text-gray-700">نشانی:</span> <span className="mr-2">{seller?.seller_address || '-'}</span> | 
               <span className="font-semibold text-gray-700 mr-1"> استان:</span> <span className="mr-2">{seller?.seller_province || '-'}</span> | 
               <span className="font-semibold text-gray-700 mr-1"> شهرستان:</span> <span className="mr-2">{seller?.seller_city || '-'}</span> | 
-              <span className="font-semibold text-gray-700 mr-1"> کد پستی:</span> <span className="mr-2">{seller?.seller_postal_code || '-'}</span>
+              <span className="font-semibold text-gray-700 mr-1"> کد پستی:</span> <span className="mr-2">{toPersianNumbers(seller?.seller_postal_code || '-')}</span>
             </div>
           </div>
 
@@ -162,17 +183,17 @@ export default function InvoiceViewPage({ params }) {
             <h3 className="font-bold mb-3 text-center text-sm text-gray-800 bg-white py-2 rounded border">مشخصات خریدار</h3>
             <div className="text-xs leading-relaxed">
               <span className="font-semibold text-gray-700">نام/عنوان:</span> <span className="mr-2">{invoice.buyer_legal_name || '-'}</span> | 
-              <span className="font-semibold text-gray-700 mr-1"> تلفن:</span> <span className="mr-2">{invoice.buyer_phone || '-'}</span> | 
-              <span className="font-semibold text-gray-700 mr-1"> فکس:</span> <span className="mr-2">{invoice.buyer_fax || '-'}</span> | 
-              <span className="font-semibold text-gray-700 mr-1"> شماره ثبت:</span> <span className="mr-2">{invoice.buyer_registration_number || '-'}</span> | 
-              <span className="font-semibold text-gray-700 mr-1"> شماره اقتصادی:</span> <span className="mr-2">{invoice.buyer_economic_code || '-'}</span> | 
-              <span className="font-semibold text-gray-700 mr-1"> شناسه ملی:</span> <span className="mr-2">{invoice.buyer_national_identifier || '-'}</span>
+              <span className="font-semibold text-gray-700 mr-1"> تلفن:</span> <span className="mr-2">{toPersianNumbers(invoice.buyer_phone || '-')}</span> | 
+              <span className="font-semibold text-gray-700 mr-1"> فکس:</span> <span className="mr-2">{toPersianNumbers(invoice.buyer_fax || '-')}</span> | 
+              <span className="font-semibold text-gray-700 mr-1"> شماره ثبت:</span> <span className="mr-2">{toPersianNumbers(invoice.buyer_registration_number || '-')}</span> | 
+              <span className="font-semibold text-gray-700 mr-1"> شماره اقتصادی:</span> <span className="mr-2">{toPersianNumbers(invoice.buyer_economic_code || '-')}</span> | 
+              <span className="font-semibold text-gray-700 mr-1"> شناسه ملی:</span> <span className="mr-2">{toPersianNumbers(invoice.buyer_national_identifier || '-')}</span>
             </div>
             <div className="text-xs leading-relaxed mt-2 pt-2 border-t border-gray-300">
               <span className="font-semibold text-gray-700">نشانی:</span> <span className="mr-2">{invoice.buyer_address || '-'}</span> | 
               <span className="font-semibold text-gray-700 mr-1"> استان:</span> <span className="mr-2">{invoice.buyer_province || '-'}</span> | 
               <span className="font-semibold text-gray-700 mr-1"> شهرستان:</span> <span className="mr-2">{invoice.buyer_city || '-'}</span> | 
-              <span className="font-semibold text-gray-700 mr-1"> کد پستی:</span> <span className="mr-2">{invoice.buyer_postal_code || '-'}</span>
+              <span className="font-semibold text-gray-700 mr-1"> کد پستی:</span> <span className="mr-2">{toPersianNumbers(invoice.buyer_postal_code || '-')}</span>
             </div>
           </div>
         </div>
@@ -224,9 +245,9 @@ export default function InvoiceViewPage({ params }) {
 
                   return (
                     <tr key={index} className="hover:bg-gray-50">
-                      <td className="border-2 border-gray-400 p-2 text-center font-medium">{index + 1}</td>
+                      <td className="border-2 border-gray-400 p-2 text-center font-medium">{toPersianNumbers(index + 1)}</td>
                       <td className="border-2 border-gray-400 p-2 pr-3">{item.description || '-'}</td>
-                      <td className="border-2 border-gray-400 p-2 text-center font-medium">{qty}</td>
+                      <td className="border-2 border-gray-400 p-2 text-center font-medium">{toPersianNumbers(qty)}</td>
                       <td className="border-2 border-gray-400 p-2 text-center">{item.unit || '-'}</td>
                       <td className="border-2 border-gray-400 p-2 text-left font-medium">{unitPrice.toLocaleString('fa-IR')}</td>
                       <td className="border-2 border-gray-400 p-2 text-left font-medium">{total.toLocaleString('fa-IR')}</td>
@@ -268,7 +289,7 @@ export default function InvoiceViewPage({ params }) {
               <div className="text-xs leading-relaxed">
                 {selectedAccount ? (
                   <>
-                    لطفا مبلغ فوق را به شماره حساب جاری {selectedAccount.account_number} بانک {selectedAccount.bank_name} به کد {selectedAccount.bank_code || '***'} بنام شرکت {seller?.seller_name || 'آریا فولاد قرن'} و یا با شماره شبا {selectedAccount.iban || '****'} واریز نمایید.
+                    لطفا مبلغ فوق را به شماره حساب جاری {toPersianNumbers(selectedAccount.account_number)} بانک {selectedAccount.bank_name} به کد {toPersianNumbers(selectedAccount.bank_code || '***')} بنام شرکت {seller?.seller_name || 'آریا فولاد قرن'} و یا با شماره شبا {toPersianNumbers(selectedAccount.iban || '****')} واریز نمایید.
                   </>
                 ) : (
                   'حساب بانکی انتخاب نشده است'
@@ -297,11 +318,11 @@ export default function InvoiceViewPage({ params }) {
                 <span className="font-medium mr-2">{totals.travelCost.toLocaleString('fa-IR')} ریال</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="font-semibold text-gray-700">مالیات ({invoice.tax_percent || 0}%):</span>
+                <span className="font-semibold text-gray-700">مالیات ({toPersianNumbers(invoice.tax_percent || 0)}%):</span>
                 <span className="font-medium mr-2">{totals.taxAmount.toLocaleString('fa-IR')} ریال</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="font-semibold text-gray-700">عوارض ({invoice.duties_percent || 0}%):</span>
+                <span className="font-semibold text-gray-700">عوارض ({toPersianNumbers(invoice.duties_percent || 0)}%):</span>
                 <span className="font-medium mr-2">{totals.dutiesAmount.toLocaleString('fa-IR')} ریال</span>
               </div>
             </div>

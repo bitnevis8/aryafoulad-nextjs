@@ -14,7 +14,6 @@ export default function InvoiceEditPage({ params }) {
   
   // Form states - exactly like the create form
   const [customerId, setCustomerId] = useState('');
-  const [fileNumber, setFileNumber] = useState('');
   const [invoiceDate, setInvoiceDate] = useState('');
   const [buyer, setBuyer] = useState({});
   const [seller, setSeller] = useState(null);
@@ -109,16 +108,6 @@ export default function InvoiceEditPage({ params }) {
         if (data?.success) {
           const invoice = data.data;
           
-          // Generate automatic file number if not set
-          let autoFileNumber = '';
-          if (seller && !invoice.file_number) {
-            const prefix = seller.file_number_prefix || '';
-            const nextIndex = (seller.file_number_last_index || 0) + 1;
-            const customerPart = seller.file_number_include_customer_id ? (invoice.customer_id || '0') : '';
-            autoFileNumber = [prefix, customerPart, nextIndex].filter(Boolean).join('-');
-          }
-          
-          setFileNumber(invoice.file_number || autoFileNumber);
           setInvoiceDate(invoice.invoice_date ? new Date(invoice.invoice_date).toISOString().slice(0,10) : '');
           setCustomerId(invoice.customer_id || '');
           setBuyer({
@@ -167,9 +156,22 @@ export default function InvoiceEditPage({ params }) {
       const data = await res.json();
       const u = data?.data || data?.user || data;
       if (u) {
+        // تعیین نام بر اساس نوع مشتری
+        let customerName = '';
+        if (u.type === 'company' && u.companyName) {
+          // مشتری حقوقی: نام شرکت
+          customerName = u.companyName;
+        } else if (u.type === 'person') {
+          // مشتری حقیقی: نام + نام خانوادگی
+          customerName = `${u.firstName || ''} ${u.lastName || ''}`.trim();
+        } else {
+          // fallback: اگر نوع مشخص نیست، هر کدام که موجود باشد
+          customerName = u.companyName || `${u.firstName || ''} ${u.lastName || ''}`.trim();
+        }
+
         setBuyer(prev => ({
           ...prev,
-          buyer_legal_name: u.companyName || `${u.firstName || ''} ${u.lastName || ''}`.trim(),
+          buyer_legal_name: customerName,
           buyer_phone: u.phone || u.mobile || prev.buyer_phone,
           buyer_fax: u.fax || prev.buyer_fax,
           buyer_address: u.address || prev.buyer_address,
@@ -192,7 +194,6 @@ export default function InvoiceEditPage({ params }) {
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify({
-          file_number: fileNumber || null,
           invoice_date: invoiceDate || null,
           buyer_legal_name: buyer.buyer_legal_name || null,
           buyer_province: buyer.buyer_province || null,
@@ -282,7 +283,6 @@ export default function InvoiceEditPage({ params }) {
         </div>
         <div>
           <label className="block text-sm mb-2">شماره پرونده (اختیاری)</label>
-          <input className="border rounded-lg px-3 py-2 w-full" placeholder="شماره پرونده" value={fileNumber} onChange={e=>setFileNumber(e.target.value)} />
         </div>
       </div>
 

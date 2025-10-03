@@ -186,9 +186,10 @@ export default function AccountingSettingsPage() {
             />
           </div>
           <div className="flex flex-col gap-2">
-            <input type="file" accept="image/*" onChange={uploadLogo} />
+            <label className="block text-sm text-gray-600 mb-1">انتخاب فایل لوگو</label>
+            <input type="file" accept="image/*" onChange={uploadLogo} className="border rounded-lg px-3 py-2" />
             {uploadingLogo && <span className="text-sm text-gray-500">در حال آپلود...</span>}
-            <span className="text-xs text-gray-500">حداکثر حجم: ۵ مگابایت</span>
+            <span className="text-xs text-gray-500">حداکثر حجم: ۵ مگابایت • فرمت‌های مجاز: JPG, PNG, GIF</span>
           </div>
         </div>
       </div>
@@ -207,52 +208,148 @@ export default function AccountingSettingsPage() {
             />
           </div>
           <div className="flex flex-col gap-2">
-            <input type="file" accept="image/*" onChange={uploadSignature} />
+            <label className="block text-sm text-gray-600 mb-1">انتخاب فایل امضا</label>
+            <input type="file" accept="image/*" onChange={uploadSignature} className="border rounded-lg px-3 py-2" />
             {uploadingSignature && <span className="text-sm text-gray-500">در حال آپلود...</span>}
-            <span className="text-xs text-gray-500">حداکثر حجم: ۵ مگابایت</span>
+            <span className="text-xs text-gray-500">حداکثر حجم: ۵ مگابایت • فرمت‌های مجاز: JPG, PNG, GIF</span>
           </div>
         </div>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-white p-6 rounded-xl border">
         <h2 className="md:col-span-2 font-semibold">مشخصات فروشنده</h2>
-        <input name="seller_name" value={form.seller_name || ''} onChange={onChange} className="border rounded-lg px-3 py-2" placeholder="نام شرکت" />
-        <input name="seller_legal_name" value={form.seller_legal_name || ''} onChange={onChange} className="border rounded-lg px-3 py-2" placeholder="نام حقوقی" />
-        <input name="seller_province" value={form.seller_province || ''} onChange={onChange} className="border rounded-lg px-3 py-2" placeholder="استان" />
-        <input name="seller_city" value={form.seller_city || ''} onChange={onChange} className="border rounded-lg px-3 py-2" placeholder="شهر" />
-        <input name="seller_address" value={form.seller_address || ''} onChange={onChange} className="md:col-span-2 border rounded-lg px-3 py-2" placeholder="نشانی" />
-        <input name="seller_registration_number" value={form.seller_registration_number || ''} onChange={onChange} className="border rounded-lg px-3 py-2" placeholder="شماره ثبت" />
-        <input name="seller_postal_code" value={form.seller_postal_code || ''} onChange={onChange} className="border rounded-lg px-3 py-2" placeholder="کد پستی" />
-        <input name="seller_economic_code" value={form.seller_economic_code || ''} onChange={onChange} className="border rounded-lg px-3 py-2" placeholder="شماره اقتصادی" />
-        <input name="seller_phone" value={form.seller_phone || ''} onChange={onChange} className="border rounded-lg px-3 py-2" placeholder="تلفن" />
+        
+        <div>
+          <label className="block text-sm text-gray-600 mb-1">نام شرکت</label>
+          <input name="seller_name" value={form.seller_name || ''} onChange={onChange} className="border rounded-lg px-3 py-2 w-full" placeholder="نام شرکت" />
+        </div>
+        
+        <div>
+          <label className="block text-sm text-gray-600 mb-1">نام حقوقی</label>
+          <input name="seller_legal_name" value={form.seller_legal_name || ''} onChange={onChange} className="border rounded-lg px-3 py-2 w-full" placeholder="نام حقوقی" />
+        </div>
+        
+        <div>
+          <label className="block text-sm text-gray-600 mb-1">استان</label>
+          <input name="seller_province" value={form.seller_province || ''} onChange={onChange} className="border rounded-lg px-3 py-2 w-full" placeholder="استان" />
+        </div>
+        
+        <div>
+          <label className="block text-sm text-gray-600 mb-1">شهر</label>
+          <input name="seller_city" value={form.seller_city || ''} onChange={onChange} className="border rounded-lg px-3 py-2 w-full" placeholder="شهر" />
+        </div>
+        
+        <div className="md:col-span-2">
+          <label className="block text-sm text-gray-600 mb-1">نشانی</label>
+          <input name="seller_address" value={form.seller_address || ''} onChange={onChange} className="border rounded-lg px-3 py-2 w-full" placeholder="نشانی" />
+        </div>
+        
+        <div>
+          <label className="block text-sm text-gray-600 mb-1">شماره ثبت</label>
+          <input name="seller_registration_number" value={form.seller_registration_number || ''} onChange={onChange} className="border rounded-lg px-3 py-2 w-full" placeholder="شماره ثبت" />
+        </div>
+        
+        <div>
+          <label className="block text-sm text-gray-600 mb-1">کد پستی</label>
+          <input name="seller_postal_code" value={form.seller_postal_code || ''} onChange={onChange} className="border rounded-lg px-3 py-2 w-full" placeholder="کد پستی" />
+        </div>
+        
+        <div>
+          <label className="block text-sm text-gray-600 mb-1">شماره اقتصادی</label>
+          <input name="seller_economic_code" value={form.seller_economic_code || ''} onChange={onChange} className="border rounded-lg px-3 py-2 w-full" placeholder="شماره اقتصادی" />
+        </div>
+        
+        <div>
+          <label className="block text-sm text-gray-600 mb-1">تلفن</label>
+          <input name="seller_phone" value={form.seller_phone || ''} onChange={onChange} className="border rounded-lg px-3 py-2 w-full" placeholder="تلفن" />
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-white p-6 rounded-xl border">
         <h2 className="md:col-span-2 font-semibold">شماره‌گذاری فاکتور/پیش‌فاکتور</h2>
-        <input name="proforma_start_number" type="number" value={form.proforma_start_number || ''} onChange={onChange} className="border rounded-lg px-3 py-2" placeholder="شروع شماره پیش‌فاکتور" />
-        <input name="invoice_start_number" type="number" value={form.invoice_start_number || ''} onChange={onChange} className="border rounded-lg px-3 py-2" placeholder="شروع شماره فاکتور" />
-        <input name="file_number_prefix" value={form.file_number_prefix || ''} onChange={onChange} className="border rounded-lg px-3 py-2" placeholder="پیشوند شماره (مثلاً 1404)" />
+        
+        <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label className="block text-sm text-gray-600 mb-1">سال شماره‌گذاری</label>
+            <input name="file_number_prefix" value={form.file_number_prefix || ''} onChange={onChange} className="border rounded-lg px-3 py-2 w-full" placeholder="1404" />
+          </div>
+          <div>
+            <label className="block text-sm text-gray-600 mb-1">شروع شماره پیش‌فاکتور</label>
+            <input name="proforma_start_number" type="number" value={form.proforma_start_number || ''} onChange={onChange} className="border rounded-lg px-3 py-2 w-full" placeholder="1000" />
+          </div>
+          <div>
+            <label className="block text-sm text-gray-600 mb-1">شروع شماره فاکتور</label>
+            <input name="invoice_start_number" type="number" value={form.invoice_start_number || ''} onChange={onChange} className="border rounded-lg px-3 py-2 w-full" placeholder="1000" />
+          </div>
+        </div>
+        
         <div className="flex items-center gap-2">
           <input id="file_number_include_customer_id" name="file_number_include_customer_id" type="checkbox" checked={!!form.file_number_include_customer_id} onChange={onChangeBool} />
           <label htmlFor="file_number_include_customer_id" className="text-sm">افزودن شناسه مشتری در شماره</label>
         </div>
+        
         <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <label className="block text-sm text-gray-600 mb-1">آخرین ایندکس شماره</label>
             <input name="file_number_last_index" type="number" value={form.file_number_last_index ?? ''} onChange={onChange} className="border rounded-lg px-3 py-2 w-full" placeholder="0" />
           </div>
-          <div className="md:col-span-2 text-xs text-gray-500 flex items-end">مثال: 1404-123-1</div>
+          <div className="md:col-span-2 text-xs text-gray-500 flex items-end">
+            <div>
+              <div>مثال: 1404-123-1</div>
+              <div className="text-red-500 mt-1">فرمت: سال-شناسه مشتری-شماره فاکتور</div>
+            </div>
+          </div>
+        </div>
+        
+        <div className="md:col-span-2">
+          <button 
+            type="button"
+            onClick={async () => {
+              if (confirm('آیا مطمئن هستید که می‌خواهید شماره‌گذاری را صفر کنید؟ این کار برای شروع سال جدید است.')) {
+                try {
+                  const res = await fetch('/api/accounting/settings/reset-numbering', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include'
+                  });
+                  const data = await res.json();
+                  if (res.ok && data.success) {
+                    setForm(prev => ({ ...prev, file_number_last_index: 0, proforma_start_number: 1000, invoice_start_number: 1000 }));
+                    alert('شماره‌گذاری صفر شد');
+                  } else {
+                    alert(data.message || 'خطا در صفر کردن شماره‌گذاری');
+                  }
+                } catch (e) {
+                  alert('خطا در صفر کردن شماره‌گذاری');
+                }
+              }
+            }}
+            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+          >
+            صفر کردن شماره‌گذاری (شروع سال جدید)
+          </button>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-white p-6 rounded-xl border">
         <h2 className="md:col-span-3 font-semibold">مالیات و عوارض</h2>
+        
         <div>
           <label className="block text-sm text-gray-600 mb-1">درصد مالیات (%)</label>
           <input name="tax_percent" type="number" step="0.01" value={form.tax_percent ?? ''} onChange={onChange} className="border rounded-lg px-3 py-2 w-full" placeholder="مثلاً 9" />
         </div>
+        
         <div>
           <label className="block text-sm text-gray-600 mb-1">درصد عوارض (%)</label>
           <input name="duties_percent" type="number" step="0.01" value={form.duties_percent ?? ''} onChange={onChange} className="border rounded-lg px-3 py-2 w-full" placeholder="مثلاً 3" />
+        </div>
+        
+        <div className="md:col-span-3">
+          <div className="text-xs text-gray-500 bg-gray-50 p-3 rounded-lg">
+            <div className="font-semibold mb-1">راهنما:</div>
+            <div>• درصد مالیات: معمولاً 9% برای ارزش افزوده</div>
+            <div>• درصد عوارض: معمولاً 3% برای عوارض شهرداری</div>
+            <div>• این مقادیر به صورت پیش‌فرض در فاکتورها استفاده می‌شوند</div>
+          </div>
         </div>
       </div>
 

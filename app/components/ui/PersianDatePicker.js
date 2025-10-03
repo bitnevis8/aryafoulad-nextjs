@@ -14,9 +14,14 @@ export default function PersianDatePicker({
 }) {
   const handleChange = (date) => {
     if (onChange) {
-      // اگر تاریخ انتخاب شده، آن را به فرمت ISO string تبدیل کن
+      // اگر تاریخ انتخاب شده، آن را به فرمت شمسی نگه دار
       if (date) {
-        onChange(date.toDate().toISOString().split('T')[0]);
+        // تاریخ شمسی را به فرمت YYYY-MM-DD شمسی تبدیل کن
+        const year = date.year;
+        const month = String(date.month.number).padStart(2, '0');
+        const day = String(date.day).padStart(2, '0');
+        const persianDateString = `${year}-${month}-${day}`;
+        onChange(persianDateString);
       } else {
         onChange('');
       }
@@ -34,6 +39,7 @@ export default function PersianDatePicker({
       style={{ width: '100%' }}
       inputClass={`border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 w-full ${inputClass}`}
       placeholder={placeholder}
+      format="YYYY/MM/DD"
       {...props}
     />
   );

@@ -6,7 +6,6 @@ import Button from '@/app/components/ui/Button';
 
 export default function NewInvoicePage() {
   const [customerId, setCustomerId] = useState('');
-  const [fileNumber, setFileNumber] = useState('');
   const [invoiceDate, setInvoiceDate] = useState('');
   const [buyer, setBuyer] = useState({});
   const [submitting, setSubmitting] = useState(false);
@@ -31,9 +30,22 @@ export default function NewInvoicePage() {
       const data = await res.json();
       const u = data?.data || data?.user || data;
       if (u) {
+        // تعیین نام بر اساس نوع مشتری
+        let customerName = '';
+        if (u.type === 'company' && u.companyName) {
+          // مشتری حقوقی: نام شرکت
+          customerName = u.companyName;
+        } else if (u.type === 'person') {
+          // مشتری حقیقی: نام + نام خانوادگی
+          customerName = `${u.firstName || ''} ${u.lastName || ''}`.trim();
+        } else {
+          // fallback: اگر نوع مشخص نیست، هر کدام که موجود باشد
+          customerName = u.companyName || `${u.firstName || ''} ${u.lastName || ''}`.trim();
+        }
+
         setBuyer(prev => ({
           ...prev,
-          buyer_legal_name: u.companyName || `${u.firstName || ''} ${u.lastName || ''}`.trim(),
+          buyer_legal_name: customerName,
           buyer_phone: u.phone || u.mobile || prev.buyer_phone,
           buyer_fax: u.fax || prev.buyer_fax,
           buyer_address: u.address || prev.buyer_address,
@@ -58,7 +70,6 @@ export default function NewInvoicePage() {
         body: JSON.stringify({
           type: 'invoice',
           customer_id: customerId || null,
-          file_number: fileNumber || null,
           invoice_date: invoiceDate || null,
           buyer_fields: Object.keys(buyer).length ? buyer : undefined,
         })
@@ -103,7 +114,6 @@ export default function NewInvoicePage() {
           <label className="block text-sm mb-2">انتخاب مشتری (اختیاری)</label>
           <UserSelect value={customerId} onChange={onCustomerChange} placeholder="انتخاب مشتری" filterRole="customer" />
         </div>
-        <input className="border rounded-lg px-3 py-2 md:max-w-sm" placeholder="شماره پرونده" value={fileNumber} onChange={e=>setFileNumber(e.target.value)} />
         <div className="md:max-w-sm">
           <label className="block text-sm mb-2">تاریخ</label>
           <PersianDatePicker value={invoiceDate} onChange={setInvoiceDate} />

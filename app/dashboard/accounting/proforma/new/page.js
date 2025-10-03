@@ -6,7 +6,6 @@ import Button from '@/app/components/ui/Button';
 
 export default function NewProformaPage() {
   const [customerId, setCustomerId] = useState('');
-  const [fileNumber, setFileNumber] = useState('');
   const [invoiceDate, setInvoiceDate] = useState('');
   const [buyer, setBuyer] = useState({});
   const [submitting, setSubmitting] = useState(false);
@@ -61,12 +60,6 @@ export default function NewProformaPage() {
         const data = await res.json();
         if (data?.success) {
           setSeller(data.data);
-          // Generate automatic file number
-          const prefix = data.data?.file_number_prefix || '';
-          const nextIndex = (data.data?.file_number_last_index || 0) + 1;
-          const customerPart = data.data?.file_number_include_customer_id ? '0' : '';
-          const autoFileNumber = [prefix, customerPart, nextIndex].filter(Boolean).join('-');
-          setFileNumber(autoFileNumber);
         }
       } finally {
         setLoadingSeller(false);
@@ -101,14 +94,6 @@ export default function NewProformaPage() {
   const onCustomerChange = async (id) => {
     setCustomerId(id);
     
-    // Update file number with customer ID if needed
-    if (seller && seller.file_number_include_customer_id) {
-      const prefix = seller.file_number_prefix || '';
-      const nextIndex = (seller.file_number_last_index || 0) + 1;
-      const customerPart = id || '0';
-      const autoFileNumber = [prefix, customerPart, nextIndex].filter(Boolean).join('-');
-      setFileNumber(autoFileNumber);
-    }
     
     if (!id) return;
     try {
@@ -120,9 +105,22 @@ export default function NewProformaPage() {
       const u = data?.data || data?.user || data;
       if (u) {
         console.log('Setting buyer data:', u);
+        // تعیین نام بر اساس نوع مشتری
+        let customerName = '';
+        if (u.type === 'company' && u.companyName) {
+          // مشتری حقوقی: نام شرکت
+          customerName = u.companyName;
+        } else if (u.type === 'person') {
+          // مشتری حقیقی: نام + نام خانوادگی
+          customerName = `${u.firstName || ''} ${u.lastName || ''}`.trim();
+        } else {
+          // fallback: اگر نوع مشخص نیست، هر کدام که موجود باشد
+          customerName = u.companyName || `${u.firstName || ''} ${u.lastName || ''}`.trim();
+        }
+
         setBuyer(prev => ({
           ...prev,
-          buyer_legal_name: u.companyName || `${u.firstName || ''} ${u.lastName || ''}`.trim(),
+          buyer_legal_name: customerName,
           buyer_phone: u.phone || u.mobile || prev.buyer_phone,
           buyer_fax: u.fax || prev.buyer_fax,
           buyer_address: u.address || prev.buyer_address,
@@ -153,7 +151,6 @@ export default function NewProformaPage() {
         body: JSON.stringify({
           type: 'proforma',
           customer_id: customerId || null,
-          file_number: fileNumber || null,
           invoice_date: invoiceDate || null,
           buyer_fields: Object.keys(buyer).length ? buyer : undefined,
           items,
@@ -200,36 +197,80 @@ export default function NewProformaPage() {
       </div>
 
       <div className="bg-white p-6 rounded-xl border grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div>
+        <h2 className="md:col-span-3 font-semibold">مشخصات خریدار</h2>
+        
+        <div className="md:col-span-3">
           <label className="block text-sm mb-2">انتخاب مشتری (اختیاری)</label>
           <UserSelect value={customerId} onChange={onCustomerChange} placeholder="انتخاب مشتری" filterRole="customer" />
         </div>
+        
         <div>
-          <label className="block text-sm mb-2">انتخاب حساب بانکی</label>
-          <select 
-            className="border rounded-lg px-3 py-2 w-full" 
-            value={selectedAccountId} 
-            onChange={e => setSelectedAccountId(e.target.value)}
-          >
-            <option value="">انتخاب حساب بانکی</option>
-            {bankAccounts.length > 0 ? (
-              bankAccounts.map(account => (
-                <option key={account.id} value={account.id}>
-                  {account.bank_name} - {account.account_number} - کد {account.bank_code}
-                </option>
-              ))
-            ) : (
-              <option disabled>در حال بارگذاری...</option>
-            )}
-          </select>
+          <label className="block text-sm text-gray-600 mb-1">نام/عنوان</label>
+          <input className="border rounded-lg px-3 py-2 w-full" placeholder="نام/عنوان" value={buyer.buyer_legal_name||''} onChange={e=>setBuyer({ ...buyer, buyer_legal_name: e.target.value })} />
         </div>
         <div>
-          <label className="block text-sm mb-2">تاریخ</label>
-          <PersianDatePicker value={invoiceDate} onChange={setInvoiceDate} />
+          <label className="block text-sm text-gray-600 mb-1">استان</label>
+          <input className="border rounded-lg px-3 py-2 w-full" placeholder="استان" value={buyer.buyer_province||''} onChange={e=>setBuyer({ ...buyer, buyer_province: e.target.value })} />
         </div>
         <div>
-          <label className="block text-sm mb-2">شماره پرونده (اختیاری)</label>
-          <input className="border rounded-lg px-3 py-2 w-full" placeholder="شماره پرونده" value={fileNumber} onChange={e=>setFileNumber(e.target.value)} />
+          <label className="block text-sm text-gray-600 mb-1">شهر</label>
+          <input className="border rounded-lg px-3 py-2 w-full" placeholder="شهر" value={buyer.buyer_city||''} onChange={e=>setBuyer({ ...buyer, buyer_city: e.target.value })} />
+        </div>
+        <div className="md:col-span-3">
+          <label className="block text-sm text-gray-600 mb-1">نشانی</label>
+          <input className="border rounded-lg px-3 py-2 w-full" placeholder="نشانی" value={buyer.buyer_address||''} onChange={e=>setBuyer({ ...buyer, buyer_address: e.target.value })} />
+        </div>
+        <div>
+          <label className="block text-sm text-gray-600 mb-1">شماره ثبت</label>
+          <input className="border rounded-lg px-3 py-2 w-full" placeholder="شماره ثبت" value={buyer.buyer_registration_number||''} onChange={e=>setBuyer({ ...buyer, buyer_registration_number: e.target.value })} />
+        </div>
+        <div>
+          <label className="block text-sm text-gray-600 mb-1">کد اقتصادی</label>
+          <input className="border rounded-lg px-3 py-2 w-full" placeholder="کد اقتصادی" value={buyer.buyer_economic_code||''} onChange={e=>setBuyer({ ...buyer, buyer_economic_code: e.target.value })} />
+        </div>
+        <div>
+          <label className="block text-sm text-gray-600 mb-1">کد پستی</label>
+          <input className="border rounded-lg px-3 py-2 w-full" placeholder="کد پستی" value={buyer.buyer_postal_code||''} onChange={e=>setBuyer({ ...buyer, buyer_postal_code: e.target.value })} />
+        </div>
+        <div>
+          <label className="block text-sm text-gray-600 mb-1">شناسه ملی</label>
+          <input className="border rounded-lg px-3 py-2 w-full" placeholder="شناسه ملی" value={buyer.buyer_national_identifier||''} onChange={e=>setBuyer({ ...buyer, buyer_national_identifier: e.target.value })} />
+        </div>
+        <div>
+          <label className="block text-sm text-gray-600 mb-1">تلفن</label>
+          <input className="border rounded-lg px-3 py-2 w-full" placeholder="تلفن" value={buyer.buyer_phone||''} onChange={e=>setBuyer({ ...buyer, buyer_phone: e.target.value })} />
+        </div>
+        <div>
+          <label className="block text-sm text-gray-600 mb-1">نمابر</label>
+          <input className="border rounded-lg px-3 py-2 w-full" placeholder="نمابر" value={buyer.buyer_fax||''} onChange={e=>setBuyer({ ...buyer, buyer_fax: e.target.value })} />
+        </div>
+        
+        <div className="md:col-span-3 border-t pt-4 mt-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm mb-2">انتخاب حساب بانکی</label>
+              <select 
+                className="border rounded-lg px-3 py-2 w-full" 
+                value={selectedAccountId} 
+                onChange={e => setSelectedAccountId(e.target.value)}
+              >
+                <option value="">انتخاب حساب بانکی</option>
+                {bankAccounts.length > 0 ? (
+                  bankAccounts.map(account => (
+                    <option key={account.id} value={account.id}>
+                      {account.bank_name} - {account.account_number} - کد {account.bank_code}
+                    </option>
+                  ))
+                ) : (
+                  <option disabled>در حال بارگذاری...</option>
+                )}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm mb-2">تاریخ</label>
+              <PersianDatePicker value={invoiceDate} onChange={setInvoiceDate} />
+            </div>
+          </div>
         </div>
       </div>
 
@@ -352,49 +393,6 @@ export default function NewProformaPage() {
       </div>
 
 
-      <div className="bg-white p-6 rounded-xl border grid grid-cols-1 md:grid-cols-3 gap-4">
-        <h2 className="md:col-span-2 font-semibold">مشخصات خریدار (در صورت عدم انتخاب مشتری)</h2>
-        <div>
-          <label className="block text-sm text-gray-600 mb-1">نام/عنوان</label>
-          <input className="border rounded-lg px-3 py-2 w-full" placeholder="نام/عنوان" value={buyer.buyer_legal_name||''} onChange={e=>setBuyer({ ...buyer, buyer_legal_name: e.target.value })} />
-        </div>
-        <div>
-          <label className="block text-sm text-gray-600 mb-1">استان</label>
-          <input className="border rounded-lg px-3 py-2 w-full" placeholder="استان" value={buyer.buyer_province||''} onChange={e=>setBuyer({ ...buyer, buyer_province: e.target.value })} />
-        </div>
-        <div>
-          <label className="block text-sm text-gray-600 mb-1">شهر</label>
-          <input className="border rounded-lg px-3 py-2 w-full" placeholder="شهر" value={buyer.buyer_city||''} onChange={e=>setBuyer({ ...buyer, buyer_city: e.target.value })} />
-        </div>
-        <div className="md:col-span-3">
-          <label className="block text-sm text-gray-600 mb-1">نشانی</label>
-          <input className="border rounded-lg px-3 py-2 w-full" placeholder="نشانی" value={buyer.buyer_address||''} onChange={e=>setBuyer({ ...buyer, buyer_address: e.target.value })} />
-        </div>
-        <div>
-          <label className="block text-sm text-gray-600 mb-1">شماره ثبت</label>
-          <input className="border rounded-lg px-3 py-2 w-full" placeholder="شماره ثبت" value={buyer.buyer_registration_number||''} onChange={e=>setBuyer({ ...buyer, buyer_registration_number: e.target.value })} />
-        </div>
-        <div>
-          <label className="block text-sm text-gray-600 mb-1">کد اقتصادی</label>
-          <input className="border rounded-lg px-3 py-2 w-full" placeholder="کد اقتصادی" value={buyer.buyer_economic_code||''} onChange={e=>setBuyer({ ...buyer, buyer_economic_code: e.target.value })} />
-        </div>
-        <div>
-          <label className="block text-sm text-gray-600 mb-1">کد پستی</label>
-          <input className="border rounded-lg px-3 py-2 w-full" placeholder="کد پستی" value={buyer.buyer_postal_code||''} onChange={e=>setBuyer({ ...buyer, buyer_postal_code: e.target.value })} />
-        </div>
-        <div>
-          <label className="block text-sm text-gray-600 mb-1">شناسه ملی</label>
-          <input className="border rounded-lg px-3 py-2 w-full" placeholder="شناسه ملی" value={buyer.buyer_national_identifier||''} onChange={e=>setBuyer({ ...buyer, buyer_national_identifier: e.target.value })} />
-        </div>
-        <div>
-          <label className="block text-sm text-gray-600 mb-1">تلفن</label>
-          <input className="border rounded-lg px-3 py-2 w-full" placeholder="تلفن" value={buyer.buyer_phone||''} onChange={e=>setBuyer({ ...buyer, buyer_phone: e.target.value })} />
-        </div>
-        <div>
-          <label className="block text-sm text-gray-600 mb-1">نمابر</label>
-          <input className="border rounded-lg px-3 py-2 w-full" placeholder="نمابر" value={buyer.buyer_fax||''} onChange={e=>setBuyer({ ...buyer, buyer_fax: e.target.value })} />
-        </div>
-      </div>
 
       {/* Description Section */}
       <div className="bg-white p-6 rounded-xl border">
